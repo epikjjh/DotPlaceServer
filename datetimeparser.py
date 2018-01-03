@@ -4,8 +4,8 @@ def datetimeToString(time):
         return time.strftime('%a, %d %m %Y %H:%M:%S')
 
 def parseDatetime(time):
-	print('parsing ' + time)
-	return datetime.datetime(
+    print('parsing ' + time)
+    return datetime.datetime(
 		year(time),
 		month(time),
 		date(time),
@@ -14,23 +14,27 @@ def parseDatetime(time):
 		second(time)
 	)
 
+def parseTimestamp(time):
+    target = datetimeToString(time)
+    return year(target) + month(target) + date(target) + hour(target) + minute(target) + second(target)
+
 def year(time):
-	return int(time[11:15])
+    return int(time[11:15])
 
 def month(time):
-	return int(time[8:10])
+    return int(time[8:10])
 
 def date(time):
-	return int(time[5:7])
+    return int(time[5:7])
 
 def hour(time):
-	return int(time[16:18])
+    return int(time[16:18])
 
 def minute(time):
-	return int(time[19:21])
+    return int(time[19:21])
 
 def second(time):
-	return int(time[22:24])
+    return int(time[22:24])
 
 # 0         1         2         3         4
 # 01234567890123456789012345678901234567890

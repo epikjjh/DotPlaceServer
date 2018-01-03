@@ -44,7 +44,7 @@ def TripId(owner, owner_index):
 def NewTrip():
     title = urllib.parse.unquote_plus(request.form['title'])
     owner = int(request.form['owner'])
-    owner_index = int(request.form['owner_index'])
+    owner_index = datetimeparser.parseTimestamp(datetime.datetime.now())
     count = int(request.form['count'])
 
     # Inser duplicate check here
