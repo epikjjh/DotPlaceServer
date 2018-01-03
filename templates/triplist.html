@@ -1,0 +1,15 @@
+<html>
+	<body>
+		<h2>
+			Trips in databse
+		</h2>
+		
+{% for t in trips %}
+		<p>
+			id : {{t.id}}
+			<br>
+			<a href='{{url_for("list_blueprint.PositionList", trip_id=t.id)}}'>title : {{t.title}}</a>
+		</p>
+{% endfor %}
+	</body>
+</html>

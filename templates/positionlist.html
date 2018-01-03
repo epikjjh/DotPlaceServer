@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		
+	</head>
+	<body>
+		<h1>
+			Positions in Trip {{trip.title}}
+		</h1>
+		
+		
+		
+{% for p in positions %}
+		<p>
+			id : {{p.id}}
+			<br>
+			lat : {{p.lat}}, lng : {{p.lng}}
+			<br>
+			time : {{p.time}}
+			<br>
+			type : {{p.type}}
+		</p>
+{% endfor %}
+	</body>
+</html>

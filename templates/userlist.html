@@ -1,0 +1,17 @@
+<html>
+	<body>
+		<h2>
+			Users in databse
+		</h2>
+		
+{% for u in users %}
+		<p>
+			id : {{u.id}}
+			<br>
+			nickname : {{u.nickname}}
+			<br>
+			pasword : {{u.password}}
+		</p>
+{% endfor %}
+	</body>
+</html>

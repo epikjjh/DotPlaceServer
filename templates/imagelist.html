@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2> Images in database </h2>
+<h4> Total {{ imageCount }} images </h4>		
+{% for i in images %}
+<p>
+  id : {{i.id}}
+  <br>
+  path : {{i.path}}
+  <br>
+  <a href={{ url_for('image_blueprint.GetImage', imageId=i.id) }}> View Image </a>
+</p>
+{% endfor %}
+</body>
+</html>

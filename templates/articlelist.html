@@ -1,0 +1,19 @@
+<html>
+	<body>
+		<h2>
+			Articles in databse
+		</h2>
+		
+{% for a in articles %}
+		<p>
+			id : {{a.id}}
+			<br>
+			content : {{a.content}}
+{% if a.thumbnail_id != 0: %}
+			<br>
+			thumbnail : {{a.thumbnail_id}}
+{% endif %}
+		</p>
+{% endfor %}
+	</body>
+</html>
