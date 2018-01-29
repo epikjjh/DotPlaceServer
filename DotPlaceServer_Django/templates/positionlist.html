@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<h2>
+			Positions in database
+		</h2>
+
+{% for p in positions %}
+		<p>
+			id : {{ p.id }}
+			<br>
+			lat : {{ p.lat }}
+			<br>
+			lng : {{ p.lng }}
+            <br>
+            time : {{ p.time }}
+            <br>
+            type : {{ p.type }}
+            <br>
+            duration : {{ p.duration }}
+            <br>
+            trip : {{ p.trip }}
+		</p>
+{% endfor %}
+	</body>
+</html>

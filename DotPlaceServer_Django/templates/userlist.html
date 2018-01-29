@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<h2>
+			Profiles in database
+		</h2>
+
+{% for p in profiles %}
+		<p>
+			id : {{ p.id }}
+			<br>
+			user : {{ p.user }}
+			<br>
+			birthday : {{ p.birthday }}
+            <br>
+            gender : {{ p.gender }}
+            <br>
+            nation : {{ p.nation }}
+            <br>
+            profile image : {{ p.profile_image }}
+		</p>
+{% endfor %}
+	</body>
+</html>
