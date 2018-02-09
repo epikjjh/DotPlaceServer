@@ -3,9 +3,10 @@ from dotplace import views
 
 urlpatterns = [
     path('', views.main_page, name='index'),
-    path('login', views.login),
-    path('user/new', views.create_user, name='create user'),
-    path('trip_position/new', views.create_trip_and_position, name='create trip and position'),
+    path('sign_in', views.sign_in),
+    path('sign_up', views.sign_up, name='sign up'),
+    path('trip/new', views.create_trip, name='create trip'),
+    path('position/new', views.create_position, name='create position'),
     path('article/new', views.create_article, name='create article'),
     path('user/view', views.show_user, name='user list'),
     path('trip/view', views.show_trip, name='trip list'),
