@@ -8,6 +8,7 @@ urlpatterns = [
     path('trip/new', views.create_trip, name='create trip'),
     path('position/new', views.create_position, name='create position'),
     path('article/new', views.create_article, name='create article'),
+    path('article_image/new', views.create_article_image, name='create article image'),
     path('user/view', views.show_user, name='user list'),
     path('trip/view', views.show_trip, name='trip list'),
     path('position/view', views.show_position, name='position list'),

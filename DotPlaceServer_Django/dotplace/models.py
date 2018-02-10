@@ -4,6 +4,10 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 
 
+def profile_image_path(instance, filename):
+    return 'profile/profile_image_{profile_id}.jpeg'.format(profile_id=instance.id)
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE)
     nick_name = models.CharField(max_length=20, null=False)
@@ -11,7 +15,7 @@ class Profile(models.Model):
     birthday = models.CharField(max_length=10, null=False)
     gender = models.CharField(max_length=10, null=False)
     nation = models.CharField(max_length=30, null=False)
-    profile_image = models.ImageField(null=True, upload_to='profiles/%Y/%m/%d')
+    profile_image = models.ImageField(null=True, upload_to=profile_image_path)
 
 
 @receiver(post_save, sender=User)
@@ -46,6 +50,19 @@ class Article(models.Model):
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
 
 
+def article_image_path(instance, filename):
+    return 'article/article_image_{article_id}/{id}.jpeg'.format(article_id=instance.article.id, id=instance.id)
+#파일 확장자 jpeg로 한정할 것인지 확인
+
 class ImageInArticle(models.Model):
-    image = models.ImageField(null=False, upload_to='uploads/%Y/%m/%d')
+    image = models.ImageField(null=False, upload_to=article_image_path)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        if self.id is None:
+            saved_image = self.image
+            self.image = None
+            super(ImageInArticle, self).save(*args, **kwargs)
+            self.image = saved_image
+
+        super(ImageInArticle, self).save(*args, **kwargs)

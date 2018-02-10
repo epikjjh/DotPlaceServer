@@ -8,6 +8,7 @@ from dotplace.models import Trip
 from dotplace.models import Position
 from dotplace.models import Article
 from dotplace.models import ImageInArticle
+from dotplace.process_image import create_thumbnail
 
 
 def main_page(request):
@@ -56,7 +57,10 @@ def sign_up(request):
     birthday = request.POST.get('birthday')
     gender = request.POST.get('gender')
     nation = request.POST.get('nation')
-    profile_image = request.POST.get('profile image')
+    profile_image = None
+
+    if request.FILES['profile image']:
+        profile_image = request.FILES['profile image']
 
     user = User.objects.create_user(user_name, email, pass_word)
 
@@ -66,15 +70,18 @@ def sign_up(request):
     profile.birthday = birthday
     profile.gender = gender
     profile.nation = nation
-    profile.profile_image = profile_image
+
+    if profile_image:
+        profile.profile_image = profile_image
+
     profile.save()
+    create_thumbnail('profile/profile_image_{profile_id}.jpeg'.format(profile_id=profile.id), (400, 300))
 
     return JsonResponse({'id': str(profile.id), 'code': '301'})
 
 
 @require_POST
 def create_trip(request):
-    #multipart?
     title = request.POST.get('title')
     owner_index = request.POST.get('owner index')
     owner_id = request.POST.get('owner id')
@@ -101,7 +108,7 @@ def create_position(request):
     position.save()
 
     return JsonResponse({'position id': str(position.id), 'code': '301'})
-#썸네일 기능 추가
+
 
 @require_POST
 def create_article(request):
@@ -114,6 +121,21 @@ def create_article(request):
     article.save()
 
     return JsonResponse({'id': str(article.id), 'code': '301'})
+
+
+@require_POST
+def create_article_image(request):
+    image = request.FILES['image']
+    article_id = request.POST.get('article id')
+    article = Article.objects.filter(id=article_id).get()
+
+    article_image = ImageInArticle(image=image, article=article)
+    article_image.save()
+
+    create_thumbnail('article/article_image_{article_id}/{id}.jpeg'.format(article_id=article_id, id=article_image.id),
+                     (800, 600))
+
+    return JsonResponse({'id': str(article_image.id), 'code': '301'})
 
 
 @require_GET
