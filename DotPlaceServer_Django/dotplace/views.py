@@ -122,7 +122,7 @@ def create_article(request):
     article = Article.objects.create(content=content, position=position)
     article.save()
 
-    return JsonResponse({'id': str(article.pk), 'code': '301'})
+    return JsonResponse({'article id': str(article.pk), 'code': '301'})
 
 
 @require_POST
@@ -137,7 +137,7 @@ def create_article_image(request):
     create_thumbnail('article/article_image_{article_id}/{id}.jpeg'.format(article_id=article_id, id=article_image.pk),
                      (800, 600))
 
-    return JsonResponse({'id': str(article_image.pk), 'code': '301'})
+    return JsonResponse({'article image id': str(article_image.pk), 'code': '301'})
 
 
 @require_GET
@@ -235,7 +235,7 @@ def news_feed(request):
         return JsonResponse({'trip id': trip_id, 'time': time, 'image id': image_id[0]})
 
     else:
-        return JsonResponse({'user id': '-1'})
+        return JsonResponse({'trip id': '-1'})
 
 
 @require_GET
