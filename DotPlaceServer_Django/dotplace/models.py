@@ -52,7 +52,7 @@ class Article(models.Model):
 
 def article_image_path(instance, filename):
     return 'article/article_image_{article_id}/{id}.jpeg'.format(article_id=instance.article.id, id=instance.id)
-#파일 확장자 jpeg로 한정할 것인지 확인
+
 
 class ImageInArticle(models.Model):
     image = models.ImageField(null=False, upload_to=article_image_path)

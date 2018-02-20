@@ -13,6 +13,10 @@ urlpatterns = [
     path('trip/view', views.show_trip, name='trip list'),
     path('position/view', views.show_position, name='position list'),
     path('article/view', views.show_article, name='article list'),
+    path('news_feed/view', views.news_feed),
     path('article/search/trip_id', views.search_article_by_trip_id),
     path('article/search/radius', views.search_article_by_radius),
+    path('article/search/id', views.search_article_by_id),
+    path('user/search/id', views.search_user_by_id),
+    path('image/search/id', views.return_file),
 ]
