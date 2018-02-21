@@ -144,7 +144,7 @@ def create_article_image(request):
 def search_article_by_radius(request):
     target_lat = float(request.GET.get('lat'))
     target_lng = float(request.GET.get('lng'))
-    target_radius = int(request.GET.get('radius'))
+    target_radius = float(request.GET.get('radius'))
     positions = list(Position.objects.exclude(type=0))
     result = []
 
