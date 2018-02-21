@@ -229,10 +229,15 @@ def news_feed(request):
 
         time = target_article.time
         trip_id = target_article.position.trip.pk
+        
+        if image_id:
+            result_id = image_id[0]
+        else:
+            result_id = []
 
         # 스침 점수 : 향후 추가 할 것
 
-        return JsonResponse({'trip id': trip_id, 'time': time, 'image id': image_id[0]})
+        return JsonResponse({'trip id': trip_id, 'time': time, 'image id': result_id})
 
     else:
         return JsonResponse({'trip id': '-1'})
