@@ -233,7 +233,7 @@ def news_feed(request):
         if image_id:
             result_id = image_id[0]
         else:
-            result_id = []
+            result_id = 0
 
         # 스침 점수 : 향후 추가 할 것
 
