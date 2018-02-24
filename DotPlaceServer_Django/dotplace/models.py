@@ -16,6 +16,7 @@ class Profile(models.Model):
     gender = models.CharField(max_length=10, null=False)
     nation = models.CharField(max_length=30, null=False)
     profile_image = models.ImageField(null=True, upload_to=profile_image_path)
+    auth = models.IntegerField(null=False, default=0)
 
 
 @receiver(post_save, sender=User)

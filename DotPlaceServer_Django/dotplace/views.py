@@ -44,11 +44,44 @@ def show_user(request):
     return render(request, 'userlist.html', context)
 
 
-@require_GET
+@require_POST
 def sign_in(request):
-    return JsonResponse({'id': "test"})
+    user_name = request.POST.get('user name')
+    pass_word = request.POST.get('pass word')
 
-#페이스북 연동 추가
+    try:
+        target_user = User.objects.filter(username=user_name).get()
+
+    except:
+        return JsonResponse({'code': '-1'})
+
+    if target_user and target_user.check_password(pass_word):
+        target_profile = Profile.objects.filter(user=target_user).get()
+        target_profile.auth = 1
+        target_profile.save()
+
+        return JsonResponse({'code': '301'})
+    else:
+        return JsonResponse({'code': '-1'})
+
+
+@require_GET
+def sign_out(request):
+    user_name = request.GET.get('user_name')
+
+    try:
+        target_user = User.objects.filter(username=user_name).get()
+
+    except:
+        return JsonResponse({'code': '-1'})
+
+    target_profile = Profile.objects.filter(user=target_user).get()
+    target_profile.auth = 0
+    target_profile.save()
+
+    return JsonResponse({'code': '301'})
+
+
 @require_POST
 def sign_up(request):
     user_name = request.POST.get('user name')
