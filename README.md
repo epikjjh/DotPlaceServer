@@ -30,9 +30,45 @@ profile image|optional
 없음
 -----------------------------
 2. 로그인
-미구현
+- url: /sign_in
+- method : POST
+- request
+
+Data|Description
+---|---
+user name|required
+pass word|required
+
+- response
+{
+	'code': '301'
+}
+
+- ErrorCode
+{
+	'code': '-1'
+} 
 -----------------------------
-3. trip 생성
+3. 로그아웃
+- url: /sign_out
+- method : GET
+- request
+
+Data|Description
+---|---
+user_name|required
+
+- response
+{
+	'code': '301'
+}
+
+- ErrorCode
+{
+	'code': '-1'
+} 
+-----------------------------
+4. trip 생성
 - url: /trip/new
 - method : POST
 - request
@@ -52,7 +88,7 @@ owner id|required
 - ErrorCode
 없음
 -----------------------------
-4. position 생성
+5. position 생성
 - url: /position/new
 - method : POST
 - request
@@ -74,7 +110,7 @@ trip id|required
 - ErrorCode
 없음
 -----------------------------
-5. article 생성
+6. article 생성
 - url: /article/new
 - method : POST
 - request
@@ -93,7 +129,7 @@ position id|required
 - ErrorCode
 없음
 -----------------------------
-6. article image 생성
+7. article image 생성
 - url: /article_image/new
 - method : POST
 - request
@@ -112,7 +148,7 @@ article id|required
 - ErrorCode
 없음
 -----------------------------
-7. article 탐색 : trip id
+8. article 탐색 : trip id
 - url: /article/search/trip_id
 - method : GET
 - request
@@ -129,7 +165,7 @@ trip_id|required
 - ErrorCode
 없음
 -----------------------------
-8. article 탐색 : radius
+9. article 탐색 : radius
 - url: /article/search/radius
 - method : GET
 - request
@@ -148,7 +184,7 @@ radius|required
 - ErrorCode
 없음
 -----------------------------
-9. user 탐색 : user id
+10. user 탐색 : user id
 - url: /user/search/id
 - method : GET
 - request
@@ -174,7 +210,7 @@ user_id|required
 'user id': '-1'
 }
 -----------------------------
-10. article 탐색 : article id
+11. article 탐색 : article id
 - url: /article/search/id
 - method : GET
 - request
@@ -196,7 +232,7 @@ article_id|required
 'user id': '-1'
 }
 -----------------------------
-11. 뉴스피드 탐색
+12. 뉴스피드 탐색
 - url: /news_feed/view
 - method : GET
 - request
@@ -217,7 +253,7 @@ article_id|required
 'trip id': '-1'
 }
 -----------------------------
-12. image 탐색
+13. image 탐색
 - url: image/search/id
 - method : GET
 - request
