@@ -1,52 +1,119 @@
 from django.db import models
-from django.contrib.auth.models import User
-from django.dispatch import receiver
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
 from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
+from DotPlaceServer_Django import settings
+from dotplace.process_image import create_thumbnail
+
+
+class UserManager(BaseUserManager):
+    def create_user(self, user_name, phone_number, email, password, birthday, gender, nation, profile_image,
+                    **extra_fields):
+        if not user_name:
+            raise ValueError('User name required')
+        if not phone_number:
+            raise ValueError('Phone number required')
+        if not email:
+            raise ValueError('Email address required')
+        if not birthday:
+            raise ValueError('Birthday required')
+        if not gender:
+            raise ValueError('Gender required')
+        if not nation:
+            raise ValueError('Nation required')
+
+        user = self.model(user_name=user_name, phone_number=phone_number, email=self.normalize_email(email),
+                          birthday=birthday, gender=gender, nation=nation, **extra_fields)
+
+        user.set_password(password)
+        user.save(using=self._db)
+
+        if profile_image:
+            user.profile_image = profile_image
+            user.save(using=self._db)
+            create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
+
+        return user
+
+    def create_super_user(self, user_name, phone_number, email, password, **extra_fields):
+        user = self.model(user_name=user_name, phone_number=phone_number, email=self.normalize_email(email),
+                          **extra_fields)
+        user.set_password(password)
+        user.is_active = True
+        user.is_admin = True
+        user.save(using=self._db)
+
+        return user
 
 
 def profile_image_path(instance, filename):
-    return 'profile/profile_image_{profile_id}.jpeg'.format(profile_id=instance.id)
+    return 'user/profile_image_{profile_id}.jpeg'.format(profile_id=instance.id)
 
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE)
-    nick_name = models.CharField(max_length=20, null=False)
-    phone_number = models.CharField(max_length=20, null=False)
-    birthday = models.CharField(max_length=10, null=False)
-    gender = models.CharField(max_length=10, null=False)
-    nation = models.CharField(max_length=30, null=False)
+class User(AbstractBaseUser, PermissionsMixin):
+    user_name = models.CharField(unique=True, max_length=20)
+    phone_number = models.CharField(unique=True, max_length=25)
+    email = models.EmailField(unique=True, max_length=25)
+    birthday = models.CharField(max_length=10)
+    gender = models.CharField(max_length=10)
+    nation = models.CharField(max_length=30)
     profile_image = models.ImageField(null=True, upload_to=profile_image_path)
-    auth = models.IntegerField(null=False, default=0)
+    is_admin = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'user_name'
+    REQUIRED_FIELDS = ['phone_number', 'email', 'birthday', 'gender', 'nation', 'profile_image']
+
+    def save(self, *args, **kwargs):
+        if self.id is None:
+            saved_image = self.profile_image
+            self.image = None
+            super(User, self).save(*args, **kwargs)
+            self.profile_image = saved_image
+        super(User, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return '{id}'.format(id=self.user_name)
+
+    @property
+    def is_staff(self):
+        return self.is_admin
+
+    def has_perm(self, perm, obj=None):
+        return True
+
+    def has_module_perms(self, app_label):
+        return True
 
 
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+        Token.objects.create(user=instance)
 
 
 class Trip(models.Model):
-    title = models.CharField(max_length=40, null=False)
-    owner = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    owner_index = models.IntegerField(null=False)
+    title = models.CharField(max_length=40)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner_index = models.IntegerField()
 
 
 class Position(models.Model):
-    lat = models.FloatField(null=False)
-    lng = models.FloatField(null=False)
+    lat = models.FloatField()
+    lng = models.FloatField()
     time = models.DateTimeField(auto_now_add=True)
-    type = models.IntegerField(null=False)
-    duration = models.IntegerField(null=False)
+    type = models.IntegerField()
+    duration = models.IntegerField()
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
 
 
 class Article(models.Model):
-    content = models.TextField(max_length=500, null=False)
+    content = models.TextField(max_length=500)
     time = models.DateTimeField(auto_now_add=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
 
@@ -56,7 +123,7 @@ def article_image_path(instance, filename):
 
 
 class ImageInArticle(models.Model):
-    image = models.ImageField(null=False, upload_to=article_image_path)
+    image = models.ImageField(upload_to=article_image_path)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
@@ -67,3 +134,10 @@ class ImageInArticle(models.Model):
             self.image = saved_image
 
         super(ImageInArticle, self).save(*args, **kwargs)
+
+
+class Comment(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField(max_length=250)
+    time = models.DateTimeField(auto_now_add=True)
