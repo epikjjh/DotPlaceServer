@@ -20,5 +20,5 @@ urlpatterns = [
     path('news_feed/view', views.news_feed),
     path('image/search/id', views.return_file),
     path('comment/new', views.create_comment),
-    paht('comment/search/article_id', views.search_comment_by_article_id),
+    path('comment/search/article_id', views.search_comment_by_article_id),
 ]
