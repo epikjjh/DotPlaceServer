@@ -60,10 +60,14 @@ def change_pw(request):
 def change_info(request):
     user = request.user
 
+    user_name = request.data['user name']
     birthday = request.data['birthday']
     gender = request.data['gender']
     nation = request.data['nation']
     profile_image = request.FILES.get('profile image')
+
+    if user_name:
+        user.user_name = user_name
 
     if birthday:
         user.birthday = birthday

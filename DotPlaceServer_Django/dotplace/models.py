@@ -54,7 +54,7 @@ def profile_image_path(instance, filename):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    user_name = models.CharField(unique=True, max_length=20)
+    user_name = models.CharField(max_length=20)
     phone_number = models.CharField(unique=True, max_length=25)
     email = models.EmailField(unique=True, max_length=25)
     birthday = models.CharField(max_length=10)
@@ -66,8 +66,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'user_name'
-    REQUIRED_FIELDS = ['phone_number', 'email', 'birthday', 'gender', 'nation', 'profile_image']
+    USERNAME_FIELD = 'phone_number'
+    REQUIRED_FIELDS = ['user_name', 'email', 'birthday', 'gender', 'nation', 'profile_image']
 
     def save(self, *args, **kwargs):
         if self.id is None:
