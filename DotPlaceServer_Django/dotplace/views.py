@@ -1,30 +1,79 @@
 import os
 from django.http import HttpResponse
 from django.http import JsonResponse
-from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.http import require_http_methods
-from rest_framework import exceptions
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from dotplace.models import User, Trip, Position,Article, ImageInArticle, Comment
+from rest_framework.views import APIView
+from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment
 from dotplace.process_image import create_thumbnail
-#from rest_framework.views import APIView
-#from rest_framework.response import Response
 
 
-'''회원 정보 관련 api'''
+class UserView(APIView):
+    permission_classes(IsAuthenticated,)
 
-#로그 아웃
-@api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-def sign_out(request):
-    user = request.user
-    Token.objects.get(user=user).delete()
+    def get(self, request):
+        user = request.user
 
-    return JsonResponse({'code': '301'})
+        user_name = user.user_name
+        email = user.email
+        phone_number = user.phone_number
+        birthday = user.birthday
+        gender = user.gender
+        nation = user.nation
 
-#회원 가입
+        return JsonResponse({'code': '0', 'user name': user_name, 'email': email, 'phone number': phone_number,
+                             'birthday': birthday, 'gender': gender, 'nation': nation})
+
+    def put(self, request):
+        user = request.user
+
+        user_name = request.data.get('user name')
+        birthday = request.data.get('birthday')
+        gender = request.data.get('gender')
+        nation = request.data.get('nation')
+        profile_image = request.FILES.get('profile image')
+
+        if user_name:
+            user.user_name = user_name
+
+        if birthday:
+            user.birthday = birthday
+
+        if gender:
+            user.gender = gender
+
+        if nation:
+            user.nation = nation
+
+        # 기존 이미지 삭제 후 변경
+        if profile_image:
+            if user.profile_image:
+                try:
+                    os.remove('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk))
+                    os.remove('user/profile_image_{profile_id}_thumbnail.jpeg'.format(profile_id=user.pk))
+
+                except FileNotFoundError:
+                    user.profile_image = profile_image
+
+            user.profile_image = profile_image
+
+        user.save()
+
+        if profile_image:
+            create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
+
+        return JsonResponse({'code': '0'})
+
+    def delete(self, request):
+        user = request.user
+        code = user.delete()
+
+        return JsonResponse({'code': str(code)})
+
+
 @require_http_methods(['POST'])
 def sign_up(request):
     user_name = request.POST.get('user name')
@@ -36,146 +85,94 @@ def sign_up(request):
     nation = request.POST.get('nation')
     profile_image = request.FILES.get('profile image')
 
-    user = User.objects.create_user(user_name, phone_number, email, pass_word, birthday, gender,
-                                    nation, profile_image)
+    user, code = User.objects.create_user(user_name, phone_number, email, pass_word,
+                                          birthday, gender, nation, profile_image)
 
-    token = Token.objects.get(user=user)
+    try:
+        token = Token.objects.get(user=user)
+    except ObjectDoesNotExist:
+        return JsonResponse({'code': ''})
 
-    return JsonResponse({'id': str(user.pk), 'token': token.key, 'code': '301'})
+    return JsonResponse({'code': str(code), 'id': str(user.pk), 'token': token.key})
 
-#비밀 번호 수정
+
+@api_view(['DELETE'])
+@permission_classes((IsAuthenticated,))
+def sign_out(request):
+    user = request.user
+    Token.objects.get(user=user).delete()
+
+    return JsonResponse({'code': '0'})
+
+
 @api_view(['PUT'])
 @permission_classes((IsAuthenticated,))
 def change_pw(request):
-    new_pw = request.data['pass word']
+    new_pw = request.data.get('pass word')
     user = request.user
     user.set_password(new_pw)
     user.save()
 
-    return JsonResponse({'code': '301'})
-
-#회원 정보 수정
-@api_view(['PUT'])
-@permission_classes((IsAuthenticated,))
-def change_info(request):
-    user = request.user
-
-    user_name = request.data['user name']
-    birthday = request.data['birthday']
-    gender = request.data['gender']
-    nation = request.data['nation']
-    profile_image = request.FILES.get('profile image')
-
-    if user_name:
-        user.user_name = user_name
-
-    if birthday:
-        user.birthday = birthday
-
-    if gender:
-        user.gender = gender
-
-    if nation:
-        user.nation = nation
-
-    #기존 이미지 삭제 후 변경
-    if profile_image:
-        os.remove('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.user_name))
-        os.remove('user/profile_image_{profile_id}_thumbnail.jpeg'.format(profile_id=user.user_name))
-        user.profile_image = profile_image
-
-    user.save()
-
-    if profile_image:
-        create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.user_name), (400, 300))
-
-    return JsonResponse({'code': '301'})
-
-#회원 탈퇴
-@api_view(['DELETE'])
-@permission_classes((IsAuthenticated,))
-def withdrawal(request):
-    user = request.user
-    user.delete()
-
-    return JsonResponse({'code': '301'})
-
-#회원 정보 탐색
-@api_view(['GET'])
-@permission_classes((IsAuthenticated,))
-def search_user_by_id(request):
-    target_profile = request.user
-
-    user_name = target_profile.user_name
-    email = target_profile.email
-    phone_number = target_profile.phone_number
-    birthday = target_profile.birthday
-    gender = target_profile.gender
-    nation = target_profile.nation
-
-    return JsonResponse({'user name': user_name, 'email': email,
-                        'phone number': phone_number, 'birthday': birthday, 'gender': gender, 'nation': nation})
+    return JsonResponse({'code': '0'})
 
 
-@api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-def create_trip(request):
-    owner = request.user
-    title = request.POST.get('title')
-    owner_index = request.POST.get('owner index')
+class ArticleView(APIView):
+    permission_classes(IsAuthenticated, )
 
-    trip = Trip.objects.create(title=title, owner=owner, owner_index=owner_index)
+    def get(self, request):
+        article_id = request.GET.get('article_id')
 
-    trip.save()
+        try:
+            target_article = Article.objects.filter(pk=article_id).get()
 
-    return JsonResponse({'trip id': str(trip.pk),  'code': '301'})
+        except Article.DoesNotExist:
+            return JsonResponse({'user id': '-1'})
 
+        content = target_article.content
+        time = target_article.time
+        owner_id = target_article.position.trip.owner.pk
+        target_images = list(ArticleImage.objects.filter(article__pk=article_id))
+        image_ids = []
+        for target_image in target_images:
+            image_ids.append(target_image.pk)
 
-@api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-def create_position(request):
-    lat = request.POST.get('lat')
-    lng = request.POST.get('lng')
-    type = request.POST.get('type')
-    duration = request.POST.get('duration')
-    trip_id = request.POST.get('trip id')
+        return JsonResponse({'user id': owner_id, 'time': time, 'content': content, 'image ids': image_ids})
 
-    trip = Trip.objects.filter(pk=trip_id).get()
-    position = Position.objects.create(lat=lat, lng=lng, type=type, duration=duration, trip=trip)
+    def post(self, request):
+        content = request.POST.get('content')
+        position_id = request.POST.get('position id')
 
-    position.save()
+        position = Position.objects.get(pk=position_id)
 
-    return JsonResponse({'position id': str(position.pk), 'code': '301'})
+        article = Article.objects.create(content=content, position=position)
+        article.save()
 
+        return JsonResponse({'article id': str(article.pk), 'code': '0'})
 
-@api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-def create_article(request):
-    content = request.POST.get('content')
-    position_id = request.POST.get('position id')
+    def put(self, request):
+        article_id = request.data.get('article id')
+        content = request.data.get('content')
+        position_id = request.data.get('position id')
 
-    position = Position.objects.filter(pk=position_id).get()
+        article = Article.objects.get(pk=article_id)
 
-    article = Article.objects.create(content=content, position=position)
-    article.save()
+        if content:
+            article.content = content
 
-    return JsonResponse({'article id': str(article.pk), 'code': '301'})
+        if position_id:
+            position = Position.objects.get(pk=position_id)
+            article.position = position
 
+        article.save()
 
-@api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-def create_article_image(request):
-    image = request.FILES['image']
-    article_id = request.POST.get('article id')
-    article = Article.objects.filter(pk=article_id).get()
+        return JsonResponse({'article id': str(article.pk), 'code': '0'})
 
-    article_image = ImageInArticle(image=image, article=article)
-    article_image.save()
+    def delete(self, request):
+        article_id = request.data.get('article id')
+        article = Article.objects.get(pk=article_id)
+        article.delete()
 
-    create_thumbnail('article/article_image_{article_id}/{id}.jpeg'.format(article_id=article_id, id=article_image.pk),
-                     (800, 600))
-
-    return JsonResponse({'article image id': str(article_image.pk), 'code': '301'})
+        return JsonResponse({'code': '0'})
 
 
 @api_view(['GET'])
@@ -221,28 +218,6 @@ def search_article_by_trip_id(request):
 
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
-def search_article_by_id(request):
-    article_id = request.GET.get('article_id')
-
-    try:
-        target_article = Article.objects.filter(pk=article_id).get()
-
-    except Article.DoesNotExist:
-        return JsonResponse({'user id': '-1'})
-
-    content = target_article.content
-    time = target_article.time
-    owner_id = target_article.position.trip.owner.pk
-    target_images = list(ImageInArticle.objects.filter(article__pk=article_id))
-    image_ids = []
-    for target_image in target_images:
-        image_ids.append(target_image.pk)
-
-    return JsonResponse({'user id': owner_id, 'time': time, 'content': content, 'image ids': image_ids})
-
-
-@api_view(['GET'])
-@permission_classes((IsAuthenticated,))
 def news_feed(request):
     article_id = request.GET.get('article_id')
 
@@ -250,7 +225,7 @@ def news_feed(request):
 
     if target_article:
         # 최상단 이미지만 보냄
-        target_images = list(ImageInArticle.objects.filter(article__pk=article_id))
+        target_images = list(ArticleImage.objects.filter(article__pk=article_id))
         image_id = []
         for target_image in target_images:
             image_id.append(target_image.pk)
@@ -266,69 +241,65 @@ def news_feed(request):
 
         # 스침 점수 : 향후 추가 할 것
 
-        return JsonResponse({'thumbnail id': int(result_id), 'content': str(content), 'time': str(time), 'trip id': int(trip_id)})
+        return JsonResponse({'thumbnail id': int(result_id), 'content': str(content), 'time': str(time),
+                             'trip id': int(trip_id)})
 
     else:
         return JsonResponse({'trip id': '-1'})
 
 
-@api_view(['GET'])
-@permission_classes((IsAuthenticated,))
-def return_file(request):
-    image_id = request.GET.get('image_id')
-    dir_id = request.GET.get('dir_id')
-    image_type = request.GET.get('type')
+class CommentView(APIView):
+    permission_classes(IsAuthenticated, )
 
-    # profile thumbnail
-    if image_type == '0':
-        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
-        file_name = 'profile_image_' + str(image_id) + '_thumbnail.jpeg'
+    def get(self, request):
+        comment_id = request.GET.get('comment_id')
+        comment = Comment.objects.get(pk=comment_id)
+        article_id = comment.article.pk
+        owner_id = comment.owner.pk
+        content = comment.content
+        time = comment.time
 
-    # profile
-    elif image_type == '1':
-        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
-        file_name = 'profile_image_' + str(image_id) + '.jpeg'
+        return JsonResponse({'owner id': str(owner_id), 'article id': str(article_id),
+                             'content': str(content), 'time': str(time)})
 
-    # article thumbnail
-    elif image_type == '2':
-        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'article', 'article_image_{}'.format(dir_id))
-        file_name = str(image_id) + '_thumbnail.jpeg'
+    def post(self, request):
+        user = request.user
+        article_id = request.POST.get('article id')
+        content = request.POST.get('content')
 
-    # article
-    elif image_type == '3':
-        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'article', 'article_image_{}'.format(dir_id))
-        file_name = str(image_id) + '.jpeg'
+        article = Article.objects.get(pk=article_id)
+        comment = Comment(owner=user, article=article, content=content)
+        comment.save()
 
-    # error
-    else:
-        return JsonResponse({'code': '-1'})
+        return JsonResponse({'code': '0'})
 
-    file_path = os.path.join(path, file_name)
+    def put(self, request):
+        comment_id = request.data.get('comment id')
+        article_id = request.data.get('article id')
+        owner_id = request.data.get('owner id')
+        content = request.data.get('content')
 
-    try:
-        with open(file_path, 'rb') as f:
-            response = HttpResponse(f, content_type="image/jpeg")
-            response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+        comment = Comment.objects.get(pk=comment_id)
+        article = Article.objects.get(pk=article_id)
+        owner = User.objects.get(pk=owner_id)
 
-    except FileNotFoundError:
-        return JsonResponse({'code': '-1'})
+        if article:
+            comment.article = article
+        if owner:
+            comment.owner = owner
+        if content:
+            comment.content = content
 
-    else:
-        return response
+        comment.save()
 
+        return JsonResponse({'code': '0'})
 
-@api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-def create_comment(request):
-    user = request.user
-    article_id = request.POST.get('article id')
-    content = request.POST.get('content')
+    def delete(self, request):
+        comment_id = request.data.get('comment id')
+        comment = Comment.objects.get(pk=comment_id)
+        comment.delete()
 
-    article = Article.objects.get(pk=article_id)
-    comment = Comment(owner=user, article=article, content=content)
-    comment.save()
-
-    return JsonResponse({'code': 301})
+        return JsonResponse({'code': '0'})
 
 
 @api_view(['GET'])
@@ -344,8 +315,230 @@ def search_comment_by_article_id(request):
         result.append(comment.pk)
 
     return JsonResponse({'article id': article_id, 'content ids': result})
-# 1. 뉴스피드 정보 보내기(request : article id) : response : 썸네일(일단은 가장 첫 사진 -> 나중에 대표 사진 기능 추가 시 변경) + 시간 보내기 + 나중에 스침 점수 추가 시 스침 점수도 보낼 것
-# 2. 확대 사진 정보 보내기(request : article id) : response : user id + article 정보 (content + time + 모든 이미지들)
-# 3. User 정보 보내기(request : user id) : response : user 정보
-# 현경이형한테 스침 생성 설명 요청
-# 중복 검사하여 처리 해야함
+
+
+class TripView(APIView):
+    permission_classes(IsAuthenticated, )
+
+    def get(self, request):
+        trip_id = request.GET.get('trip_id')
+        trip = Trip.objects.get(pk=trip_id)
+        title = trip.title
+        owner_id = trip.owner.pk
+        owner_index = trip.owner_index
+
+        return JsonResponse({'owner id': str(owner_id), 'owner index': str(owner_index), 'title': str(title)})
+
+    def post(self, request):
+        owner = request.user
+        title = request.POST.get('title')
+        owner_index = request.POST.get('owner index')
+
+        trip = Trip.objects.create(title=title, owner=owner, owner_index=owner_index)
+
+        trip.save()
+
+        return JsonResponse({'trip id': str(trip.pk), 'code': '0'})
+
+    def put(self, request):
+        trip_id = request.data.get('trip id')
+        title = request.data.get('title')
+        owner_id = request.data.get('owner id')
+        owner_index = request.data.get('owner index')
+
+        trip = Trip.objects.get(pk=trip_id)
+        owner = User.objects.get(pk=owner_id)
+
+        trip.title = title
+        trip.owner_index = owner_index
+        trip.owner = owner
+        trip.save()
+
+        return JsonResponse({'trip id': str(trip.pk), 'code': '0'})
+
+    def delete(self, request):
+        trip_id = request.data.get('trip id')
+        trip = Trip.objects.get(pk=trip_id)
+        trip.delete()
+
+        return JsonResponse({'code': '0'})
+
+
+class PositionView(APIView):
+    permission_classes(IsAuthenticated, )
+
+    def get(self, request):
+        position_id = request.GET.get('position_id')
+        position = Position.objects.get(pk=position_id)
+
+        lat = position.lat
+        lng = position.lng
+        time = position.time
+        type = position.type
+        duration = position.duration
+        trip_id = position.trip.pk
+
+        return JsonResponse({'lat': str(lat), 'lng': str(lng), 'time': str(time), 'type': str(type),
+                             'duration': str(duration), 'trip_id': str(trip_id), 'code': '0'})
+
+    def post(self, request):
+        lat = request.POST.get('lat')
+        lng = request.POST.get('lng')
+        type = request.POST.get('type')
+        duration = request.POST.get('duration')
+        trip_id = request.POST.get('trip id')
+
+        trip = Trip.objects.filter(pk=trip_id).get()
+        position = Position.objects.create(lat=lat, lng=lng, type=type, duration=duration, trip=trip)
+
+        position.save()
+
+        return JsonResponse({'position id': str(position.pk), 'code': '0'})
+
+    def delete(self, request):
+        position_id = request.data.get('position id')
+        position = Position.objects.get(pk=position_id)
+        position.delete()
+
+        return JsonResponse({'code': '0'})
+
+
+class ArticleImageView(APIView):
+    permission_classes(IsAuthenticated, )
+
+    def get(self, request):
+        image_id = request.GET.get('image_id')
+        article_id = request.GET.get('article_id')
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'article',
+                            'article_image_{}'.format(article_id))
+        file_name = str(image_id) + '.jpeg'
+
+        file_path = os.path.join(path, file_name)
+
+        try:
+            with open(file_path, 'rb') as f:
+                response = HttpResponse(f, content_type="image/jpeg")
+                response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+        except FileNotFoundError:
+            return JsonResponse({'code': ''})
+
+        else:
+            return response
+
+    def post(self, request):
+        image = request.FILES['image']
+        article_id = request.POST.get('article id')
+        article = Article.objects.filter(pk=article_id).get()
+
+        article_image = ArticleImage(image=image, article=article)
+        article_image.save()
+        try:
+            code = '0'
+            create_thumbnail('article/article_image_{article_id}/{id}.jpeg'
+                             .format(article_id=article_id, id=article_image.pk), (800, 600))
+        except FileNotFoundError:
+            code = ''
+
+        return JsonResponse({'article image id': str(article_image.pk), 'code': str(code)})
+
+    def delete(self, request):
+        image_id = request.data.get('image id')
+        image = ArticleImage.objects.get(pk=image_id)
+        code = image.delete()
+
+        return JsonResponse({'code': str(code)})
+
+
+class ProfileImageView(APIView):
+    permission_classes(IsAuthenticated, )
+
+    def get(self, request):
+        user = request.user
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
+        file_name = 'profile_image_' + str(user.pk) + '.jpeg'
+
+        file_path = os.path.join(path, file_name)
+
+        try:
+            with open(file_path, 'rb') as f:
+                response = HttpResponse(f, content_type="image/jpeg")
+                response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+        except FileNotFoundError:
+            return JsonResponse({'code': ''})
+
+        else:
+            return response
+
+    def put(self, request):
+        user = request.user
+        profile_image = request.data.get('profile image')
+
+        try:
+            code = '0'
+            os.remove('user/profile_image_{user_id}.jpeg'.format(user_id=user.pk))
+            os.remove('user/profile_image_{user_id}_thumbnail.jpeg'.format(user_id=user.pk))
+        except FileNotFoundError:
+            code = ''
+
+        user.profile_image = profile_image
+        user.save()
+
+        return JsonResponse({'code': str(code)})
+
+    def delete(self, request):
+        user = request.user
+        user.profile_image = None
+        try:
+            code = '0'
+            os.remove('user/profile_image_{user_id}.jpeg'.format(user_id=user.pk))
+            os.remove('user/profile_image_{user_id}_thumbnail.jpeg'.format(user_id=user.pk))
+        except FileNotFoundError:
+            code = ''
+
+        return JsonResponse({'code': str(code)})
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def return_profile_image_thumbnail(request):
+    user = request.user
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
+    file_name = 'profile_image_' + str(user.pk) + '_thumbnail.jpeg'
+
+    file_path = os.path.join(path, file_name)
+
+    try:
+        with open(file_path, 'rb') as f:
+            response = HttpResponse(f, content_type="image/jpeg")
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    except FileNotFoundError:
+        return JsonResponse({'code': ''})
+
+    else:
+        return response
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def return_article_image_thumbnail(request):
+    image_id = request.GET.get('image_id')
+    article_id = request.GET.get('article_id')
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'article',
+                        'article_image_{}'.format(article_id))
+    file_name = str(image_id) + '_thumbnail.jpeg'
+
+    file_path = os.path.join(path, file_name)
+
+    try:
+        with open(file_path, 'rb') as f:
+            response = HttpResponse(f, content_type="image/jpeg")
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    except FileNotFoundError:
+        return JsonResponse({'code': ''})
+
+    else:
+        return response

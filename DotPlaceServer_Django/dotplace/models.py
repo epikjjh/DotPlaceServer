@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.base_user import BaseUserManager
@@ -30,13 +31,18 @@ class UserManager(BaseUserManager):
 
         user.set_password(password)
         user.save(using=self._db)
+        code = '0'
 
         if profile_image:
-            user.profile_image = profile_image
-            user.save(using=self._db)
-            create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
+            try:
+                user.profile_image = profile_image
+                user.save(using=self._db)
+                create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
+            except FileNotFoundError:
+                code = ''
+                user.delete()
 
-        return user
+        return user, code
 
     def create_super_user(self, user_name, phone_number, email, password, **extra_fields):
         user = self.model(user_name=user_name, phone_number=phone_number, email=self.normalize_email(email),
@@ -70,12 +76,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['user_name', 'email', 'birthday', 'gender', 'nation', 'profile_image']
 
     def save(self, *args, **kwargs):
-        if self.id is None:
+        if self.pk is None:
             saved_image = self.profile_image
             self.image = None
             super(User, self).save(*args, **kwargs)
             self.profile_image = saved_image
         super(User, self).save(*args, **kwargs)
+
+    def delete(self, using=None, keep_parents=False):
+        try:
+            code = '0'
+            os.remove('user/profile_image_{user_id}.jpeg'.format(user_id=self.pk))
+            os.remove('user/profile_image_{user_id}_thumbnail.jpeg'.format(user_id=self.pk))
+        except FileNotFoundError:
+            code = ''
+        super(User, self).delete()
+
+        return code
 
     def __str__(self):
         return '{id}'.format(id=self.user_name)
@@ -114,7 +131,7 @@ class Position(models.Model):
 
 class Article(models.Model):
     content = models.TextField(max_length=500)
-    time = models.DateTimeField(auto_now_add=True)
+    time = models.DateTimeField(auto_now=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
 
 
@@ -122,22 +139,36 @@ def article_image_path(instance, filename):
     return 'article/article_image_{article_id}/{id}.jpeg'.format(article_id=instance.article.id, id=instance.id)
 
 
-class ImageInArticle(models.Model):
+class ArticleImage(models.Model):
     image = models.ImageField(upload_to=article_image_path)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        if self.id is None:
+        if self.pk is None:
             saved_image = self.image
             self.image = None
-            super(ImageInArticle, self).save(*args, **kwargs)
+            super(ArticleImage, self).save(*args, **kwargs)
             self.image = saved_image
 
-        super(ImageInArticle, self).save(*args, **kwargs)
+        super(ArticleImage, self).save(*args, **kwargs)
+
+    def delete(self, using=None, keep_parents=False):
+        try:
+            code = '0'
+            os.remove('article/article_image_{article_id}/{article_image_id}.jpeg'
+                      .format(article_id=self.article.pk, article_image_id=self.pk))
+            os.remove('article/article_image_{article_id}/{article_image_id}_thumbnail.jpeg'
+                      .format(article_id=self.article.pk, article_image_id=self.pk))
+        except FileNotFoundError:
+            code = ''
+
+        super(ArticleImage, self).delete()
+
+        return code
 
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=250)
-    time = models.DateTimeField(auto_now_add=True)
+    time = models.DateTimeField(auto_now=True)
