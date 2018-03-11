@@ -3,32 +3,185 @@
 API
 =============================
 
-1. 회원가입
+**회원가입을 제외하고는 request를 보낼 때 Header에 Token을 보내야함.**
+
+Headers
+- Key : Authorization
+- Value : Token [Actual token info]
+
+ex) curl command  
+curl -X GET http://127.0.0.1:8000/api/example/ -H 'Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b'
+
+-----------------------------
+
+1. user 검색
+- url: /user
+- method : GET
+- request : None
+
+- response
+
+Name|Type
+---|---
+user name|string
+email|string
+nick name|string
+phone number|string
+birthday|string
+gender|string
+nation|string
+
+- status code
+
+Code|Description
+---|---
+0|success
+401|unauthorized
+
+-----------------------------
+
+2.user 정보 수정
+- url: /user
+- method : PUT
+- request
+
+Name|Description|Type
+---|---|---
+user name|optional|string
+birthday|optional|string
+gender|optional|string
+nation|optional|string
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+401|unauthorized
+
+-----------------------------
+
+3. 회원탈퇴
+- url: /user
+- method : DELETE
+- request : None
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+401|unauthorized
+
+-----------------------------
+
+4. 회원가입
 - url: /sign_up
 - method : POST
 - request
 
-Data|Description
----|---
-user name|required
-nick name|required
-phone number|required
-pass word|required
-email|required
-birthday|required
-gender|required
-nation|required
-profile image|optional
+Data|Description|Type
+---|---|---
+user name|required|string
+nick name|required|string
+phone number|required|string
+pass word|required|string
+email|required|string
+birthday|required|string
+gender|required|string
+nation|required|string
+profile image|optional|file
 
 - response
-{
-	'id': profile.pk
-	'code': '301'
-}
 
-- ErrorCode
-없음
+Name|Type
+---|---
+code|string
+id|string
+token|string
+
+- status code
+
+Code|Description
+---|---
+0|success
+1|필수 입력 값 미입력
+2|Email or Phone number 중복
+3|해당 유저의 프로필 사진을 찾을 수 없음(썸네일 생성 시)
+4|해당 유저의 토큰을 찾을 수 없음
+401|unauthorized
+
 -----------------------------
+
+5. 로그아웃
+- url: /sign_out
+- method : DELETE
+- request : None
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+5|해당 유저의 토큰을 찾을 수 없음
+401|unauthorized
+
+-----------------------------
+
+6. 비밀번호 변경
+- url: /change_pw
+- method : PUT
+- request
+
+Data|Description|Type
+---|---|---
+pass word|required|string
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+401|unauthorized
+
+-----------------------------
+
+7. article 검색
+- url: /article
+- method : GET
+- request
+
+Data|Description|Type
+---|---|---
+article_id|required|string
+
+- response
+
+Name|Type
+---|---
+code|string
+user id|string
+time|string
+content|string
+image ids|list
+
+- status code
+
+Code|Description
+---|---
+0|success
+6|해당 article을 찾을 수 없음
+401|unauthorized
+
+-----------------------------
+
 2. 로그인
 - url: /sign_in
 - method : POST
@@ -183,32 +336,7 @@ radius|required
 
 - ErrorCode
 없음
------------------------------
-10. user 탐색 : user id
-- url: /user/search/id
-- method : GET
-- request
 
-Data|Description
----|---
-user_id|required
-
-- response
-{
-'user id': user_id,
-'user name': user_name,
-'email': email,
-'nick name': nick_name,
-'phone number': phone_number, 
-'birthday': birthday, 
-'gender': gender, 
-'nation': nation
-}
-
-- ErrorCode
-{
-'user id': '-1'
-}
 -----------------------------
 11. article 탐색 : article id
 - url: /article/search/id
