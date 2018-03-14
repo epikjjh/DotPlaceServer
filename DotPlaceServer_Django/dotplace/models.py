@@ -13,18 +13,8 @@ from dotplace.process_image import create_thumbnail
 class UserManager(BaseUserManager):
     def create_user(self, user_name, phone_number, email, password, birthday, gender, nation, profile_image,
                     **extra_fields):
-        if not user_name:
-            raise ValueError('User name required')
-        if not phone_number:
-            raise ValueError('Phone number required')
-        if not email:
-            raise ValueError('Email address required')
-        if not birthday:
-            raise ValueError('Birthday required')
-        if not gender:
-            raise ValueError('Gender required')
-        if not nation:
-            raise ValueError('Nation required')
+        if not user_name or not phone_number or not email or not birthday or not gender or not nation:
+            raise ValueError('Field required')
 
         user = self.model(user_name=user_name, phone_number=phone_number, email=self.normalize_email(email),
                           birthday=birthday, gender=gender, nation=nation, **extra_fields)
@@ -39,8 +29,9 @@ class UserManager(BaseUserManager):
                 user.save(using=self._db)
                 create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
             except FileNotFoundError:
-                code = ''
-                user.delete()
+                code = '3'
+                user.profile_image = None
+                user.save(using=self._db)
 
         return user, code
 
@@ -89,7 +80,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             os.remove('user/profile_image_{user_id}.jpeg'.format(user_id=self.pk))
             os.remove('user/profile_image_{user_id}_thumbnail.jpeg'.format(user_id=self.pk))
         except FileNotFoundError:
-            code = ''
+            code = '-1'
         super(User, self).delete()
 
         return code
@@ -131,7 +122,7 @@ class Position(models.Model):
 
 class Article(models.Model):
     content = models.TextField(max_length=500)
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(auto_now_add=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
 
 
@@ -160,7 +151,7 @@ class ArticleImage(models.Model):
             os.remove('article/article_image_{article_id}/{article_image_id}_thumbnail.jpeg'
                       .format(article_id=self.article.pk, article_image_id=self.pk))
         except FileNotFoundError:
-            code = ''
+            code = '-1'
 
         super(ArticleImage, self).delete()
 
@@ -171,4 +162,4 @@ class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=250)
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(auto_now_add=True)

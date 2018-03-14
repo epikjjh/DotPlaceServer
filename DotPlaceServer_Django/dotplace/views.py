@@ -1,4 +1,5 @@
 import os
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -24,8 +25,9 @@ class UserView(APIView):
         gender = user.gender
         nation = user.nation
 
-        return JsonResponse({'code': '0', 'user name': user_name, 'email': email, 'phone number': phone_number,
-                             'birthday': birthday, 'gender': gender, 'nation': nation})
+        return JsonResponse({'code': '0', 'user name': str(user_name), 'email': str(email),
+                             'phone number': str(phone_number), 'birthday': str(birthday),
+                             'gender': str(gender), 'nation': str(nation)})
 
     def put(self, request):
         user = request.user
@@ -34,7 +36,6 @@ class UserView(APIView):
         birthday = request.data.get('birthday')
         gender = request.data.get('gender')
         nation = request.data.get('nation')
-        profile_image = request.FILES.get('profile image')
 
         if user_name:
             user.user_name = user_name
@@ -48,30 +49,13 @@ class UserView(APIView):
         if nation:
             user.nation = nation
 
-        # 기존 이미지 삭제 후 변경
-        if profile_image:
-            if user.profile_image:
-                try:
-                    os.remove('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk))
-                    os.remove('user/profile_image_{profile_id}_thumbnail.jpeg'.format(profile_id=user.pk))
-
-                except FileNotFoundError:
-                    user.profile_image = profile_image
-
-            user.profile_image = profile_image
-
-        user.save()
-
-        if profile_image:
-            create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
-
         return JsonResponse({'code': '0'})
 
     def delete(self, request):
         user = request.user
         code = user.delete()
 
-        return JsonResponse({'code': str(code)})
+        return JsonResponse({'code': str(code), 'user id': str(user.pk)})
 
 
 @require_http_methods(['POST'])
@@ -85,22 +69,32 @@ def sign_up(request):
     nation = request.POST.get('nation')
     profile_image = request.FILES.get('profile image')
 
-    user, code = User.objects.create_user(user_name, phone_number, email, pass_word,
-                                          birthday, gender, nation, profile_image)
+    try:
+        user, code = User.objects.create_user(user_name, phone_number, email, pass_word,
+                                              birthday, gender, nation, profile_image)
+    except ValueError:
+        return JsonResponse({'code': '1'})
+    except IntegrityError:
+        return JsonResponse({'code': '2'})
 
     try:
         token = Token.objects.get(user=user)
     except ObjectDoesNotExist:
-        return JsonResponse({'code': ''})
+        return JsonResponse({'code': '4'})
 
-    return JsonResponse({'code': str(code), 'id': str(user.pk), 'token': token.key})
+    return JsonResponse({'code': str(code), 'id': str(user.pk), 'token': str(token.key)})
 
 
 @api_view(['DELETE'])
 @permission_classes((IsAuthenticated,))
 def sign_out(request):
     user = request.user
-    Token.objects.get(user=user).delete()
+    try:
+        token = Token.objects.get(user=user)
+    except Token.DoesNotExist:
+        return JsonResponse({'code': '5'})
+    else:
+        token.delete()
 
     return JsonResponse({'code': '0'})
 
@@ -123,53 +117,69 @@ class ArticleView(APIView):
         article_id = request.GET.get('article_id')
 
         try:
-            target_article = Article.objects.filter(pk=article_id).get()
+            article = Article.objects.get(pk=article_id)
 
         except Article.DoesNotExist:
-            return JsonResponse({'user id': '-1'})
+            return JsonResponse({'code': '6'})
 
-        content = target_article.content
-        time = target_article.time
-        owner_id = target_article.position.trip.owner.pk
-        target_images = list(ArticleImage.objects.filter(article__pk=article_id))
-        image_ids = []
-        for target_image in target_images:
-            image_ids.append(target_image.pk)
+        content = article.content
+        time = article.time
+        owner_id = article.position.trip.owner.pk
+        image_ids = list(ArticleImage.objects.filter(article__pk=article_id).values_list('pk', flat=True))
 
-        return JsonResponse({'user id': owner_id, 'time': time, 'content': content, 'image ids': image_ids})
+        return JsonResponse({'code': '0', 'user id': str(owner_id), 'time': str(time), 'content': str(content),
+                             'image ids': image_ids})
 
     def post(self, request):
         content = request.POST.get('content')
         position_id = request.POST.get('position id')
 
-        position = Position.objects.get(pk=position_id)
+        try:
+            position = Position.objects.get(pk=position_id)
+
+        except Position.DoesNotExist:
+            return JsonResponse({'code': '7'})
 
         article = Article.objects.create(content=content, position=position)
         article.save()
 
-        return JsonResponse({'article id': str(article.pk), 'code': '0'})
+        return JsonResponse({'code': '0', 'article id': str(article.pk)})
 
     def put(self, request):
         article_id = request.data.get('article id')
         content = request.data.get('content')
         position_id = request.data.get('position id')
 
-        article = Article.objects.get(pk=article_id)
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '8'})
 
         if content:
             article.content = content
 
         if position_id:
-            position = Position.objects.get(pk=position_id)
+            try:
+                position = Position.objects.get(pk=position_id)
+
+            except Position.DoesNotExist:
+                return JsonResponse({'code': '9'})
+
             article.position = position
 
         article.save()
 
-        return JsonResponse({'article id': str(article.pk), 'code': '0'})
+        return JsonResponse({ 'code': '0', 'article id': str(article.pk)})
 
     def delete(self, request):
         article_id = request.data.get('article id')
-        article = Article.objects.get(pk=article_id)
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '10'})
+
         article.delete()
 
         return JsonResponse({'code': '0'})
@@ -178,42 +188,31 @@ class ArticleView(APIView):
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
 def search_article_by_radius(request):
-    target_lat = float(request.GET.get('lat'))
-    target_lng = float(request.GET.get('lng'))
+    lat = float(request.GET.get('lat'))
+    lng = float(request.GET.get('lng'))
     target_radius = float(request.GET.get('radius'))
-    positions = list(Position.objects.exclude(type=0))
+    positions = Position.objects.exclude(type=0)
     result = []
 
     for position in positions:
-        radius = ((target_lat - position.lat)**2 + (target_lng - position.lng)**2)**(1/2)
+        radius = ((lat - position.lat)**2 + (lng - position.lng)**2)**(1/2)
         if radius <= target_radius:
-            if position.article_set.all():
-                result_articles = list(position.article_set.all())
-                for result_article in result_articles:
-                    result.append(result_article.pk)
+            result += list(position.article_set.all().values_list('pk', flat=True))
 
-    return JsonResponse({'article id': result})
+    return JsonResponse({'code': '0', 'article ids': result})
 
 
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
 def search_article_by_trip_id(request):
     trip_id = request.GET.get('trip_id')
-    try:
-        target_positions = list(Position.objects.filter(trip__pk=trip_id))
-
-    except Position.DoesNotExist:
-        return JsonResponse({'article id': '-1'})
-
+    positions = Position.objects.filter(trip__pk=trip_id)
     result = []
 
-    for position in target_positions:
-        if position.article_set.all():
-            result_articles = list(position.article_set.all())
-            for result_article in result_articles:
-                result.append(result_article.pk)
+    for position in positions:
+        result += list(position.article_set.all().values_list('pk', flat=True))
 
-    return JsonResponse({'article id': result})
+    return JsonResponse({'code': '0', 'article ids': result})
 
 
 @api_view(['GET'])
@@ -221,31 +220,27 @@ def search_article_by_trip_id(request):
 def news_feed(request):
     article_id = request.GET.get('article_id')
 
-    target_article = Article.objects.filter(pk=article_id).get()
+    try:
+        article = Article.objects.get(pk=article_id)
 
-    if target_article:
-        # 최상단 이미지만 보냄
-        target_images = list(ArticleImage.objects.filter(article__pk=article_id))
-        image_id = []
-        for target_image in target_images:
-            image_id.append(target_image.pk)
+    except Article.DoesNotExist:
+        return JsonResponse({'code': '11'})
 
-        time = target_article.time
-        trip_id = target_article.position.trip.pk
-        content = target_article.content
+    # 최상단 image id만 보냄
+    image_ids = ArticleImage.objects.filter(article__pk=article_id).values_list('pk', flat=True)
+    time = article.time
+    trip_id = article.position.trip.pk
+    content = article.content
         
-        if image_id:
-            result_id = image_id[0]
-        else:
-            result_id = 0
-
-        # 스침 점수 : 향후 추가 할 것
-
-        return JsonResponse({'thumbnail id': int(result_id), 'content': str(content), 'time': str(time),
-                             'trip id': int(trip_id)})
-
+    if image_ids:
+       result_id = image_ids[0]
     else:
-        return JsonResponse({'trip id': '-1'})
+        result_id = 0
+
+    # 스침 점수 : 향후 추가 할 것
+
+    return JsonResponse({'code': '0', 'thumbnail id': int(result_id), 'content': str(content), 'time': str(time),
+                             'trip id': int(trip_id)})
 
 
 class CommentView(APIView):
@@ -253,13 +248,17 @@ class CommentView(APIView):
 
     def get(self, request):
         comment_id = request.GET.get('comment_id')
-        comment = Comment.objects.get(pk=comment_id)
+        try:
+            comment = Comment.objects.get(pk=comment_id)
+        except Comment.DoesNotExist:
+            return JsonResponse({'code': '12'})
+
         article_id = comment.article.pk
         owner_id = comment.owner.pk
         content = comment.content
         time = comment.time
 
-        return JsonResponse({'owner id': str(owner_id), 'article id': str(article_id),
+        return JsonResponse({'code': '0', 'owner id': str(owner_id), 'article id': str(article_id),
                              'content': str(content), 'time': str(time)})
 
     def post(self, request):
@@ -267,36 +266,50 @@ class CommentView(APIView):
         article_id = request.POST.get('article id')
         content = request.POST.get('content')
 
-        article = Article.objects.get(pk=article_id)
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '13'})
+
         comment = Comment(owner=user, article=article, content=content)
         comment.save()
 
-        return JsonResponse({'code': '0'})
+        return JsonResponse({'code': '0', 'comment id': str(comment.pk)})
 
     def put(self, request):
         comment_id = request.data.get('comment id')
         article_id = request.data.get('article id')
-        owner_id = request.data.get('owner id')
         content = request.data.get('content')
 
-        comment = Comment.objects.get(pk=comment_id)
-        article = Article.objects.get(pk=article_id)
-        owner = User.objects.get(pk=owner_id)
+        try:
+            comment = Comment.objects.get(pk=comment_id)
+        except Comment.DoesNotExist:
+            return JsonResponse({'code': '14'})
+
+        try:
+            article = Article.objects.get(pk=article_id)
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '15'})
 
         if article:
             comment.article = article
-        if owner:
-            comment.owner = owner
         if content:
             comment.content = content
 
         comment.save()
 
-        return JsonResponse({'code': '0'})
+        return JsonResponse({'code': '0', 'comment id': str(comment.pk)})
 
     def delete(self, request):
         comment_id = request.data.get('comment id')
-        comment = Comment.objects.get(pk=comment_id)
+
+        try:
+            comment = Comment.objects.get(pk=comment_id)
+
+        except Comment.DoesNotExist:
+            return JsonResponse({'code': '16'})
+
         comment.delete()
 
         return JsonResponse({'code': '0'})
@@ -306,15 +319,10 @@ class CommentView(APIView):
 @permission_classes((IsAuthenticated,))
 def search_comment_by_article_id(request):
     article_id = request.POST.get('article id')
-    article = Article.objects.get(pk=article_id)
 
-    comments = list(Comment.objects.filter(article=article))
-    result = []
+    comment_ids = list(Comment.objects.filter(article__pk=article_id).values_list('pk', flat=True))
 
-    for comment in comments:
-        result.append(comment.pk)
-
-    return JsonResponse({'article id': article_id, 'content ids': result})
+    return JsonResponse({'code': '0', 'article id': article_id, 'comment ids': comment_ids})
 
 
 class TripView(APIView):
@@ -322,7 +330,13 @@ class TripView(APIView):
 
     def get(self, request):
         trip_id = request.GET.get('trip_id')
-        trip = Trip.objects.get(pk=trip_id)
+
+        try:
+            trip = Trip.objects.get(pk=trip_id)
+
+        except Trip.DoesNotExist:
+            return JsonResponse({'code': '17'})
+
         title = trip.title
         owner_id = trip.owner.pk
         owner_index = trip.owner_index
@@ -338,27 +352,37 @@ class TripView(APIView):
 
         trip.save()
 
-        return JsonResponse({'trip id': str(trip.pk), 'code': '0'})
+        return JsonResponse({'code': '0', 'trip id': str(trip.pk)})
 
     def put(self, request):
         trip_id = request.data.get('trip id')
         title = request.data.get('title')
-        owner_id = request.data.get('owner id')
         owner_index = request.data.get('owner index')
 
-        trip = Trip.objects.get(pk=trip_id)
-        owner = User.objects.get(pk=owner_id)
+        try:
+            trip = Trip.objects.get(pk=trip_id)
 
-        trip.title = title
-        trip.owner_index = owner_index
-        trip.owner = owner
+        except Trip.DoesNotExist:
+            return JsonResponse({'code': '18'})
+
+        if title:
+            trip.title = title
+        if owner_index:
+            trip.owner_index = owner_index
+
         trip.save()
 
-        return JsonResponse({'trip id': str(trip.pk), 'code': '0'})
+        return JsonResponse({'code': '0', 'trip id': str(trip.pk)})
 
     def delete(self, request):
         trip_id = request.data.get('trip id')
-        trip = Trip.objects.get(pk=trip_id)
+
+        try:
+            trip = Trip.objects.get(pk=trip_id)
+
+        except Trip.DoesNotExist:
+            return JsonResponse({'code': '19'})
+
         trip.delete()
 
         return JsonResponse({'code': '0'})
@@ -369,7 +393,12 @@ class PositionView(APIView):
 
     def get(self, request):
         position_id = request.GET.get('position_id')
-        position = Position.objects.get(pk=position_id)
+
+        try:
+            position = Position.objects.get(pk=position_id)
+
+        except Position.DoesNotExist:
+            return JsonResponse({'code': '20'})
 
         lat = position.lat
         lng = position.lng
@@ -378,8 +407,8 @@ class PositionView(APIView):
         duration = position.duration
         trip_id = position.trip.pk
 
-        return JsonResponse({'lat': str(lat), 'lng': str(lng), 'time': str(time), 'type': str(type),
-                             'duration': str(duration), 'trip_id': str(trip_id), 'code': '0'})
+        return JsonResponse({'code': '0', 'lat': float(lat), 'lng': float(lng), 'time': str(time), 'type': int(type),
+                             'duration': int(duration), 'trip id': str(trip_id)})
 
     def post(self, request):
         lat = request.POST.get('lat')
@@ -388,16 +417,26 @@ class PositionView(APIView):
         duration = request.POST.get('duration')
         trip_id = request.POST.get('trip id')
 
-        trip = Trip.objects.filter(pk=trip_id).get()
+        try:
+            trip = Trip.objects.get(pk=trip_id)
+        except Trip.DoesNotExist:
+            return JsonResponse({'code': '21'})
+
         position = Position.objects.create(lat=lat, lng=lng, type=type, duration=duration, trip=trip)
 
         position.save()
 
-        return JsonResponse({'position id': str(position.pk), 'code': '0'})
+        return JsonResponse({'code': '0', 'position id': str(position.pk)})
 
     def delete(self, request):
         position_id = request.data.get('position id')
-        position = Position.objects.get(pk=position_id)
+
+        try:
+            position = Position.objects.get(pk=position_id)
+
+        except Position.DoesNotExist:
+            return JsonResponse({'code': '22'})
+
         position.delete()
 
         return JsonResponse({'code': '0'})
@@ -421,7 +460,7 @@ class ArticleImageView(APIView):
                 response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
         except FileNotFoundError:
-            return JsonResponse({'code': ''})
+            return JsonResponse({'code': '23'})
 
         else:
             return response
@@ -429,22 +468,31 @@ class ArticleImageView(APIView):
     def post(self, request):
         image = request.FILES['image']
         article_id = request.POST.get('article id')
-        article = Article.objects.filter(pk=article_id).get()
+
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '24'})
 
         article_image = ArticleImage(image=image, article=article)
         article_image.save()
+
         try:
-            code = '0'
             create_thumbnail('article/article_image_{article_id}/{id}.jpeg'
                              .format(article_id=article_id, id=article_image.pk), (800, 600))
         except FileNotFoundError:
-            code = ''
+            return JsonResponse({'code': '25'})
 
-        return JsonResponse({'article image id': str(article_image.pk), 'code': str(code)})
+        return JsonResponse({'code': '0', 'article image id': str(article_image.pk)})
 
     def delete(self, request):
         image_id = request.data.get('image id')
-        image = ArticleImage.objects.get(pk=image_id)
+        try:
+            image = ArticleImage.objects.get(pk=image_id)
+        except ArticleImage.DoesNotExist:
+            return JsonResponse({'code': '26'})
+
         code = image.delete()
 
         return JsonResponse({'code': str(code)})
@@ -466,24 +514,31 @@ class ProfileImageView(APIView):
                 response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
         except FileNotFoundError:
-            return JsonResponse({'code': ''})
+            return JsonResponse({'code': '27'})
 
         else:
             return response
 
     def put(self, request):
         user = request.user
-        profile_image = request.data.get('profile image')
+        profile_image = request.data.get('image')
 
         try:
             code = '0'
             os.remove('user/profile_image_{user_id}.jpeg'.format(user_id=user.pk))
             os.remove('user/profile_image_{user_id}_thumbnail.jpeg'.format(user_id=user.pk))
         except FileNotFoundError:
-            code = ''
+            code = '-1'
 
         user.profile_image = profile_image
         user.save()
+
+        try:
+            create_thumbnail('user/profile_image_{profile_id}.jpeg'.format(profile_id=user.pk), (400, 300))
+        except FileNotFoundError:
+            user.profile_image = None
+            user.save()
+            return JsonResponse({'code': '28'})
 
         return JsonResponse({'code': str(code)})
 
@@ -495,7 +550,7 @@ class ProfileImageView(APIView):
             os.remove('user/profile_image_{user_id}.jpeg'.format(user_id=user.pk))
             os.remove('user/profile_image_{user_id}_thumbnail.jpeg'.format(user_id=user.pk))
         except FileNotFoundError:
-            code = ''
+            code = '-1'
 
         return JsonResponse({'code': str(code)})
 
@@ -515,7 +570,7 @@ def return_profile_image_thumbnail(request):
             response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
     except FileNotFoundError:
-        return JsonResponse({'code': ''})
+        return JsonResponse({'code': '29'})
 
     else:
         return response
@@ -538,7 +593,7 @@ def return_article_image_thumbnail(request):
             response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
     except FileNotFoundError:
-        return JsonResponse({'code': ''})
+        return JsonResponse({'code': '30'})
 
     else:
         return response
