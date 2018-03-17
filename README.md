@@ -145,7 +145,7 @@ password|required|string
 
 Code|Description
 ---|---
-401|unauthorized
+400|Bad Request:unable to log in with provided credentials
 
 -----------------------------
 
