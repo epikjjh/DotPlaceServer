@@ -135,7 +135,7 @@ Code|Description
 Data|Description|Type
 ---|---|---
 username|required|string
-pass word|required|string
+password|required|string
 
 **여기서의 username은 phone number를 의미**
 
