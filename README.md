@@ -129,7 +129,7 @@ Code|Description
 
 5. 로그인
 - url: /sign_in
-- method : GET
+- method : POST
 - request
 
 Data|Description|Type
