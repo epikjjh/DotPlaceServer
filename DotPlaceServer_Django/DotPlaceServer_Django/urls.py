@@ -16,6 +16,6 @@ Including another URLconf
 from django.urls import path, include
 
 urlpatterns = [
-    path('rest-api/', include('rest_framework.urls')),
     path('', include('dotplace.urls')),
+    path('location/', include('schimcalculator.urls')),
 ]

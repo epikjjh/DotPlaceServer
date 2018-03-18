@@ -3,13 +3,13 @@ from django.db import IntegrityError
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment
 from dotplace.process_image import create_thumbnail
+
 
 
 class UserView(APIView):
@@ -79,7 +79,7 @@ def sign_up(request):
 
     try:
         token = Token.objects.get(user=user)
-    except ObjectDoesNotExist:
+    except Token.DoesNotExist:
         return JsonResponse({'code': '4'})
 
     return JsonResponse({'code': str(code), 'id': str(user.pk), 'token': str(token.key)})
