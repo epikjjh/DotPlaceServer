@@ -129,16 +129,23 @@ Code|Description
 
 5. 로그인
 - url: /sign_in
-- method : GET
-- request : None
+- method : POST
+- request
 
-- response : token / status code
+Data|Description|Type
+---|---|---
+username|required|string
+password|required|string
+
+**여기서의 username은 phone number를 의미**
+
+- response : token or status code
 
 - status code
 
 Code|Description
 ---|---
-401|unauthorized
+400|Bad Request:unable to log in with provided credentials
 
 -----------------------------
 
