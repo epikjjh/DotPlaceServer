@@ -139,12 +139,14 @@ password|required|string
 
 **여기서의 username은 phone number를 의미**
 
-- response : token or status code
+- response : token & status code
 
 - status code
 
 Code|Description
 ---|---
+0|success
+-1|already signed in(return existing token)
 400|Bad Request:unable to log in with provided credentials
 
 -----------------------------
