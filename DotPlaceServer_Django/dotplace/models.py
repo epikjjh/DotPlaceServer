@@ -7,7 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from DotPlaceServer_Django import settings
-from dotplace.process_image import create_thumbnail
+from dotplace.helper import create_thumbnail
 
 
 class UserManager(BaseUserManager):

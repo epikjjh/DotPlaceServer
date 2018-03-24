@@ -1,4 +1,3 @@
-from rest_framework.authtoken.views import obtain_auth_token
 from django.urls import path
 from dotplace import views
 
@@ -6,7 +5,7 @@ from dotplace import views
 urlpatterns = [
     path('user', views.UserView.as_view()),
     path('sign_up', views.sign_up),
-    path('sign_in', obtain_auth_token),
+    path('sign_in', views.SignIn.as_view()),
     path('sign_out', views.sign_out),
     path('change_pw', views.change_pw),
     path('article', views.ArticleView.as_view()),

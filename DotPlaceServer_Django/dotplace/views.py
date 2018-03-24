@@ -3,12 +3,13 @@ from django.db import IntegrityError
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment
-from dotplace.process_image import create_thumbnail
+from dotplace.helper import create_thumbnail, index_parser
 
 
 
@@ -83,6 +84,21 @@ def sign_up(request):
         return JsonResponse({'code': '4'})
 
     return JsonResponse({'code': str(code), 'id': str(user.pk), 'token': str(token.key)})
+
+
+class SignIn(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+
+        if created:
+            return JsonResponse({'code': '0', 'token': token.key})
+
+        else:
+            return JsonResponse({'code': '-1', 'token': token.key})
 
 
 @api_view(['DELETE'])
@@ -348,7 +364,7 @@ class TripView(APIView):
         title = request.POST.get('title')
         owner_index = request.POST.get('owner index')
 
-        trip = Trip.objects.create(title=title, owner=owner, owner_index=owner_index)
+        trip = Trip.objects.create(title=title, owner=owner, owner_index=index_parser(owner_index))
 
         trip.save()
 
@@ -368,7 +384,7 @@ class TripView(APIView):
         if title:
             trip.title = title
         if owner_index:
-            trip.owner_index = owner_index
+            trip.owner_index = index_parser(owner_index)
 
         trip.save()
 
