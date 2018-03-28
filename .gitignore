@@ -1,4 +1,4 @@
-reated by https://www.gitignore.io/api/venv,python,pycharm
+#Created by https://www.gitignore.io/api/venv,python,pycharm
 
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
@@ -190,8 +190,25 @@ local_settings.py
 db.sqlite3
 media
 
+### VirtualEnv ###
+# Virtualenv
+.Python
+[Bb]in
+[Ii]nclude
+[Ll]ib
+[Ll]ib64
+[Ll]ocal
+[Mm]an
+[Ss]cripts
+[Tt]cl
+pyvenv.cfg
+.venv
+pip-selfcheck.json
+
 secret.py
 *.jpeg
+DotPlaceEnv/
+
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
