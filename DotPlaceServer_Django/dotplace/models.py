@@ -7,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from DotPlaceServer_Django import settings
+from schimcalculator.models import Area
 from dotplace.helper import create_thumbnail
 
 
@@ -58,6 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     gender = models.CharField(max_length=10)
     nation = models.CharField(max_length=30)
     profile_image = models.ImageField(null=True, upload_to=profile_image_path)
+    home = models.ForeignKey(Area, blank=True, null=True)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 

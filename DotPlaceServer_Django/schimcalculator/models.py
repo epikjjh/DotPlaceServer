@@ -6,8 +6,8 @@ from django.db import models
 class Score(models.Model):
     alpha = models.ForeignKey(User, on_delete=models.CASCADE, related_name='alpha')
     omega = models.ForeignKey(User, on_delete=models.CASCADE, related_name='omega')
-    schim = models.IntegerField(default=0)
-    newsfeed = models.IntegerField(default=0)
+    score = models.IntegerField(default=0)
+    time = models.DateTimeField(auto_now=True)
 
 
 # lat(y) : 48000000(m) ÷ 180 -> 10(m) : 0.0000375
