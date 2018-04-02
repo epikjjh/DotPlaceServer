@@ -36,7 +36,7 @@ class DotPlaceView(APIView):
             return JsonResponse({'code': '33'})
 
         total_dots = DotPlace.objects.count()
-        ticket = area.numofdots / total_dots
+        ticket = (area.numofdots / total_dots) if total_dots else 1
         dotplace = DotPlace.objects.create(area=area, owner=user, ticket=ticket, is_dot=is_dot)
         dotplace.save()
 
