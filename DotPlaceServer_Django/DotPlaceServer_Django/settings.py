@@ -155,3 +155,4 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
   'fields': 'id, name, email'
 }
 '''
+CELERY_RESULT_BACKEND = 'db+sqlite:///results.sqlite'
