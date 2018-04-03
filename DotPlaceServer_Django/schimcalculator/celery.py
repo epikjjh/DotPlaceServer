@@ -28,30 +28,40 @@ def calculator():
         targets = DotPlace.objects.filter(area=area).exclude(owner=owner)
 
         for target in targets:
-            alpha, omega = owner, target.owner if int(owner.email) < int(target.owner.email) else target.owner, owner
+            if int(owner.phone_number) < int(target.owner.phone_number):
+                alpha = owner
+                omega = target.owner
+            else:
+                alpha = target.owner
+                omega = owner
             
             try:
                 score = Score.objects.get(alpha=alpha, omega=omega)
+                created = False
                 
             except Score.DoesNotExist:
                 score = Score.objects.create(alpha=alpha, omega=omega)
+                created = True
             
-            # check home area
-            # lat(y) -> 1' : 266667 (m)
-            # lng(x) -> 1' : 133333 (m)
-            
-            if alpha.home and (((area.lat - alpha.home.lat)/133333)**2 + ((area.lng - alpha.home.lng)/266667)**2)**(1/2) < 10000:
-                score += 2
-            
-            if omega.home and (((area.lat - omega.home.lat)/133333)**2 + ((area.lng - omega.home.lng)/266667)**2)**(1/2) < 10000:
-                score += 2
-            
-            if target.is_dot:
-                score += 2
+            # score time check to remove duplicating calculation
+            if created or score.time < dotplace.time or score.time < target.time:
 
-            score += 1
+                # check home area
+                # lat(y) -> 1' : 266667 (m)
+                # lng(x) -> 1' : 133333 (m)
+            
+                if alpha.home and (((area.lat - alpha.home.lat)/133333)**2 + ((area.lng - alpha.home.lng)/266667)**2)**(1/2) < 10000:
+                    score.score += 2
+            
+                if omega.home and (((area.lat - omega.home.lat)/133333)**2 + ((area.lng - omega.home.lng)/266667)**2)**(1/2) < 10000:
+                    score.score += 2
+            
+                if target.is_dot:
+                    score.score += 2
 
-            score.save()
+                score.score += 1
+
+                score.save()
 
 
 @app.task
