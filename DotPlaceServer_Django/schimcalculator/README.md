@@ -26,3 +26,6 @@ Schim server : celery + rabbitmq broker
 
 - 보안 설정
 celery.py 내에 broker user name 및 password를 secret.py로 옮길 것
+
+- DB 설정
+현재 celery 기본으로 sqlite를 사용하고 있어서 향후 교체해야 
