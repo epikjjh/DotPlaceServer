@@ -96,7 +96,7 @@ Data|Description|Type
 ---|---|---
 user name|required|string
 nick name|required|string
-phone number|required|string
+phone number|optional|string
 pass word|required|string
 email|required|string
 birthday|required|string
@@ -240,6 +240,7 @@ Code|Description
 ---|---
 0|success
 7|해당 position을 찾을 수 없음
+8|이미 글이 존재함
 401|unauthorized
 
 -----------------------------

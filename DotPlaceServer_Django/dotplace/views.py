@@ -156,6 +156,9 @@ class ArticleView(APIView):
         except Position.DoesNotExist:
             return JsonResponse({'code': '7'})
 
+        if (Article.objects.filter(position=position).count() > 0):
+            return JsonResponse({'code': '8'})
+
         article = Article.objects.create(content=content, position=position)
         article.save()
 
@@ -334,7 +337,7 @@ class CommentView(APIView):
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
 def search_comment_by_article_id(request):
-    article_id = request.POST.get('article id')
+    article_id = request.GET.get('article id')
 
     comment_ids = list(Comment.objects.filter(article__pk=article_id).values_list('pk', flat=True))
 
