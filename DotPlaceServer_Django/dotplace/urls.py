@@ -20,4 +20,5 @@ urlpatterns = [
     path('profile_image', views.ProfileImageView),
     path('profile_image_thumbnail', views.return_profile_image_thumbnail),
     path('article_image_thumbnail', views.return_article_image_thumbnail),
+    path('follow', views.FollowView.as_view()),
 ]

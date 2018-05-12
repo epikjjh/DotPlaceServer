@@ -62,6 +62,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
+    following = models.ManyToManyField('self', symmetrical=False)
+
     objects = UserManager()
 
     USERNAME_FIELD = 'phone_number'

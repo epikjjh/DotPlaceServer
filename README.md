@@ -867,3 +867,44 @@ Code|Description
 401|unauthorized
 
 -----------------------------
+
+35. Follow
+
+- url: follow
+- method : PUT
+- request
+
+| Data    | Description | Type   |
+| ------- | ----------- | ------ |
+| user_id | required    | string |
+
+* response : status code
+* status code
+
+| Code | Description                   |
+| ---- | ----------------------------- |
+| 0    | Success                       |
+| 31   | Invalid data : 잘못된 user_id |
+
+____________________
+
+36. Follow 취소
+
+- url: follow
+- method: Delete
+- request
+
+| Data    | Description | Type   |
+| ------- | ----------- | ------ |
+| user_id | required    | string |
+
+- response: status code
+- status code
+
+| Code | Description                  |
+| ---- | ---------------------------- |
+| 0    | Success                      |
+| 31   | Invalid data: 잘못된 user_id |
+
+-------
+

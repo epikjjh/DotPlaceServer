@@ -616,3 +616,35 @@ def return_article_image_thumbnail(request):
 
     else:
         return response
+
+
+class FollowView(APIView):
+    permission_classes((IsAuthenticated,))
+
+    def put(self, request):
+        following_id = request.data.get('user_id')
+        user = request.user
+
+        try:
+            following = User.objects.get(following_id)
+
+        except User.DoesNotExist:
+            return JsonResponse({'code': '31'})
+
+        user.following.add(following)
+
+        return JsonResponse({'code': '0'})
+
+    def delete(self, request):
+        following_id = request.data.get('user_id')
+        user = request.user
+
+        try:
+            following = User.objects.get(following_id)
+
+        except User.DoesNotExist:
+            return JsonResponse({'code': '31'})
+
+        user.following.remove(following)
+
+        return JsonResponse({'code': '0'})
