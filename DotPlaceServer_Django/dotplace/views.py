@@ -626,7 +626,7 @@ class FollowView(APIView):
         user = request.user
 
         try:
-            following = User.objects.get(following_id)
+            following = User.objects.get(pk=following_id)
 
         except User.DoesNotExist:
             return JsonResponse({'code': '31'})
@@ -640,7 +640,7 @@ class FollowView(APIView):
         user = request.user
 
         try:
-            following = User.objects.get(following_id)
+            following = User.objects.get(pk=following_id)
 
         except User.DoesNotExist:
             return JsonResponse({'code': '31'})
@@ -648,3 +648,24 @@ class FollowView(APIView):
         user.following.remove(following)
 
         return JsonResponse({'code': '0'})
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_other_user(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+
+    except User.DoesNotExist:
+        return JsonResponse({'code': '32'})
+
+    user_name = user.user_name
+    email = user.email
+    birthday = user.birthday
+    gender = user.gender
+    nation = user.nation
+
+    return JsonResponse({'code': '0', 'user name': str(user_name), 'email': str(email),'birthday': str(birthday),
+                         'gender': str(gender), 'nation': str(nation)})

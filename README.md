@@ -908,3 +908,33 @@ ____________________
 
 -------
 
+37. User 검색 : user_id
+
+- url: user/search
+- method: GET
+- request
+
+| Data    | Description | Type   |
+| ------- | ----------- | ------ |
+| user_id | required    | string |
+
+- response: status code or json data
+
+- response
+
+| Name      | Type   |
+| --------- | ------ |
+| code      | string |
+| user name | string |
+| email     | string |
+| birthday  | string |
+| gender    | string |
+| nation    | string |
+
+- status code
+
+| Code | Description   |
+| ---- | ------------- |
+| 32   | Wrong user_id |
+| 0    | Success       |
+
