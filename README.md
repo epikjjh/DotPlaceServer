@@ -938,3 +938,29 @@ ____________________
 | 32   | Wrong user_id |
 | 0    | Success       |
 
+-----
+
+38. 좋아요
+
+- url: like
+- method : PUT
+- request
+
+| Data       | Description | Type   |
+| ---------- | ----------- | ------ |
+| article_id | required    | string |
+
+- response: status code or json data
+- response
+
+| Name  | Type    |
+| ----- | ------- |
+| code  | string  |
+| count | integer |
+
+- status code
+
+| Code | Description      |
+| ---- | ---------------- |
+| 33   | Wrong article_id |
+| 0    | Success          |

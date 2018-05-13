@@ -669,3 +669,36 @@ def get_other_user(request):
 
     return JsonResponse({'code': '0', 'user name': str(user_name), 'email': str(email),'birthday': str(birthday),
                          'gender': str(gender), 'nation': str(nation)})
+
+
+class LikeView(APIView):
+    permission_classes((IsAuthenticated,))
+
+    def put(self, request):
+        article_id = request.data.get('article_id')
+        user = request.user
+
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '33'})
+
+        article.like.add(user)
+        num_of_likes = int(User.objects.filter(article=article).count())
+        return JsonResponse({'code': '0', 'count': num_of_likes})
+
+    def delete(self, request):
+        article_id = request.data.get('article_id')
+        user = request.user
+
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '33'})
+
+        article.like.remove(user)
+
+        num_of_likes = int(User.objects.filter(article=article).count())
+        return JsonResponse({'code': '0', 'count': num_of_likes})

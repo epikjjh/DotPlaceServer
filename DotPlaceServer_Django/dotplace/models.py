@@ -127,6 +127,7 @@ class Article(models.Model):
     content = models.TextField(max_length=500)
     time = models.DateTimeField(auto_now_add=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
+    like = models.ManyToManyField(User, symmetrical=False)
 
 
 def article_image_path(instance, filename):
