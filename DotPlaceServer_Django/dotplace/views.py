@@ -143,8 +143,10 @@ class ArticleView(APIView):
         owner_id = article.position.trip.owner.pk
         image_ids = list(ArticleImage.objects.filter(article__pk=article_id).values_list('pk', flat=True))
 
+        liked = article.like.filter(user=request.user).count() > 0
+
         return JsonResponse({'code': '0', 'user id': str(owner_id), 'time': str(time), 'content': str(content),
-                             'image ids': image_ids})
+                             'image ids': image_ids, 'liked': bool(liked)})
 
     def post(self, request):
         content = request.POST.get('content')

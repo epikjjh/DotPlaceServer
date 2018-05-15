@@ -206,6 +206,7 @@ user id|string
 time|string
 content|string
 image ids|list
+liked|bool
 
 - status code
 
