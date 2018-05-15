@@ -964,3 +964,30 @@ ____________________
 | ---- | ---------------- |
 | 33   | Wrong article_id |
 | 0    | Success          |
+
+-----
+
+39. 좋아요 취소
+
+- url: like
+- method : DELETE
+- request
+
+| Data       | Description | Type   |
+| ---------- | ----------- | ------ |
+| article_id | required    | string |
+
+- response: status code or json data
+- response
+
+| Name  | Type    |
+| ----- | ------- |
+| code  | string  |
+| count | integer |
+
+- status code
+
+| Code | Description      |
+| ---- | ---------------- |
+| 33   | Wrong article_id |
+| 0    | Success          |
