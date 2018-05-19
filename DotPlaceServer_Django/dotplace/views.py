@@ -252,7 +252,7 @@ def news_feed(request):
     time = article.time
     trip_id = article.position.trip.pk
     content = article.content
-        
+
     if image_ids:
        result_id = image_ids[0]
     else:
@@ -704,3 +704,29 @@ class LikeView(APIView):
 
         num_of_likes = int(User.objects.filter(article=article).count())
         return JsonResponse({'code': '0', 'count': num_of_likes})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_following_by_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+
+    except User.DoesNotExist:
+        return JsonResponse({'code': '32'})
+
+    return JsonResponse({'ids': list(user.following.all())})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_follower_by_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+
+    except User.DoesNotExist:
+        return JsonResponse({'code': '32'})
+
+    return JsonResponse({'ids': list(user.following_set.all())})

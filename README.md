@@ -992,3 +992,56 @@ ____________________
 | ---- | ---------------- |
 | 33   | Wrong article_id |
 | 0    | Success          |
+
+-----
+
+40. 팔로잉 검색
+
+- url: user/following
+- method: GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response: status code or json
+- response
+
+|Name|Type|
+|---|---|
+|ids|list|
+
+- status code
+
+|Code|Description|
+|----|----|
+| 32   | Wrong user_id |
+| 0    | Success       |
+
+-----
+
+41. 팔로워 검색
+
+- url: user/follower
+- method: GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response: status code or json
+- response
+
+|Name|Type|
+|---|---|
+|ids|list|
+
+- status code
+
+|Code|Description|
+|----|----|
+| 32   | Wrong user_id |
+| 0    | Success       |
+
