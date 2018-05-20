@@ -23,6 +23,7 @@
 #.idea/**/libraries
 .idea/
 .idea/*
+secret.py
 
 # CMake
 cmake-build-debug/
