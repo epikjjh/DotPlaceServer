@@ -14,6 +14,7 @@ urlpatterns = [
     path('article', views.ArticleView.as_view()),
     path('article/search/radius', views.search_article_by_radius),
     path('article/search/trip_id', views.search_article_by_trip_id),
+    path('article.search/following', views.search_articles_of_followings),
     path('news_feed', views.news_feed),
     path('comment', views.CommentView.as_view()),
     path('comment/search/article_id', views.search_comment_by_article_id),

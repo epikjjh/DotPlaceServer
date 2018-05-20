@@ -1045,3 +1045,31 @@ ____________________
 | 32   | Wrong user_id |
 | 0    | Success       |
 
+-----
+
+42. Article 검색: following
+
+- url: article/search/following
+- method: GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|offset|required|integer|
+
+- response: status code or json
+- response
+
+|Name|Type|
+|---|---|
+|code|string|
+|ids|list|
+|total|integer|
+
+- status code
+
+|Code|Description|
+|----|---|
+|35|offset이 integer가 아님|
+|36|offset이 너무 크거나 작음|
+|0|success|

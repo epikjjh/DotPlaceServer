@@ -222,6 +222,17 @@ def search_article_by_radius(request):
 
     return JsonResponse({'code': '0', 'article ids': result})
 
+# @api_view(['GET'])
+# @permission_classes((IsAuthenticated,))
+# def search_article_by_radius_with_offset(request):
+#     lat = float(request.GET.get('lat'))
+#     lng = float(request.GET.get('lng'))
+#     target_radius = float(request.GET.get('radius'))
+#     positions = Position.objects.exclude(type=0)
+#     result = []
+
+
+
 
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
@@ -234,6 +245,37 @@ def search_article_by_trip_id(request):
         result += list(position.article_set.all().values_list('pk', flat=True))
 
     return JsonResponse({'code': '0', 'article ids': result})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def search_articles_of_followings(request):
+    offset = request.GET.get('offset')
+    try:
+        offset = int(offset)
+    except:
+        return JsonResponse({'code': '35'})
+
+    if offset < 0: return JsonResponse({'code': '36'})
+    amount_to_get = 10
+    user = request.user
+
+    followings = list(user.following.all())
+    articles = Article.objects.filter(position__trip__owner__in=followings)
+    articles_count = articles.count()
+    offsets = articles_count / amount_to_get
+
+    begin = (offset - 1) * amount_to_get
+
+    if begin > articles_count: return JsonResponse({'code': '36'})
+
+    end = begin + amount_to_get
+    total_index = offsets + 1 if offsets > int(offsets) else offsets
+
+    if end < articles_count:
+        ret = list(articles[begin:end])
+    else: ret = list(articles[begin:])
+
+    return JsonResponse({'code': '0', 'article_ids': ret, 'total': total_index})
 
 
 @api_view(['GET'])
@@ -730,3 +772,4 @@ def get_follower_by_id(request):
         return JsonResponse({'code': '32'})
 
     return JsonResponse({'ids': list(user.following_set.all())})
+
