@@ -1073,3 +1073,23 @@ ____________________
 |35|offset이 integer가 아님|
 |36|offset이 너무 크거나 작음|
 |0|success|
+
+-----
+
+43. Profile thumbnail image 검색 : user_id
+- url: profile_image_thumbnail
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response : image(jpeg) or status code
+
+- status code
+
+Code|Description
+---|---
+29|File not found : 해당 image를 찾을 수 없음
+32|Wrong user_id

@@ -7,6 +7,7 @@ urlpatterns = [
     path('user/search', views.get_other_user),
     path('user/following', views.get_following_by_id),
     path('user/follower', views.get_follower_by_id),
+    path('user/profile_image_thumbnail', views.get_profile_image_thumbnail_by_user_id),
     path('sign_up', views.sign_up),
     path('sign_in', views.SignIn.as_view()),
     path('sign_out', views.sign_out),

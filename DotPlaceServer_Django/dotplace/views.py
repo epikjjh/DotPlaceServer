@@ -773,3 +773,28 @@ def get_follower_by_id(request):
 
     return JsonResponse({'ids': list(user.following_set.all())})
 
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_profile_image_thumbnail_by_user_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'code':'32'})
+
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
+    file_name = 'profile_image_' + str(user.pk) + '_thumbnail.jpeg'
+
+    file_path = os.path.join(path, file_name)
+
+    try:
+        with open(file_path, 'rb') as f:
+            response = HttpResponse(f, content_type="image/jpeg")
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    except FileNotFoundError:
+        return JsonResponse({'code': '29'})
+
+    else:
+        return response
