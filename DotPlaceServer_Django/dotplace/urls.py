@@ -4,6 +4,11 @@ from dotplace import views
 
 urlpatterns = [
     path('user', views.UserView.as_view()),
+    path('user/search', views.get_other_user),
+    path('user/following', views.get_following_by_id),
+    path('user/follower', views.get_follower_by_id),
+    path('user/profile_image_thumbnail', views.get_profile_image_thumbnail_by_user_id),
+    path('user/profile_image', views.get_profile_image_by_user_id),
     path('sign_up', views.sign_up),
     path('sign_in', views.SignIn.as_view()),
     path('sign_out', views.sign_out),
@@ -11,6 +16,7 @@ urlpatterns = [
     path('article', views.ArticleView.as_view()),
     path('article/search/radius', views.search_article_by_radius),
     path('article/search/trip_id', views.search_article_by_trip_id),
+    path('article.search/following', views.search_articles_of_followings),
     path('news_feed', views.news_feed),
     path('comment', views.CommentView.as_view()),
     path('comment/search/article_id', views.search_comment_by_article_id),
@@ -20,4 +26,7 @@ urlpatterns = [
     path('profile_image', views.ProfileImageView),
     path('profile_image_thumbnail', views.return_profile_image_thumbnail),
     path('article_image_thumbnail', views.return_article_image_thumbnail),
+    path('follow', views.FollowView.as_view()),
+    path('like', views.LikeView.as_view()),
+    path('message', views.MessageView.as_view()),
 ]

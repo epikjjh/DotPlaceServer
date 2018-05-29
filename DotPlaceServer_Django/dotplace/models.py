@@ -62,6 +62,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
+    following = models.ManyToManyField('self', symmetrical=False)
+
     objects = UserManager()
 
     USERNAME_FIELD = 'phone_number'
@@ -125,6 +127,7 @@ class Article(models.Model):
     content = models.TextField(max_length=500)
     time = models.DateTimeField(auto_now_add=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
+    like = models.ManyToManyField(User)
 
 
 def article_image_path(instance, filename):
@@ -164,3 +167,13 @@ class Comment(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=250)
     time = models.DateTimeField(auto_now_add=True)
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField(max_length=500)
+    send_time = models.DateTimeField(auto_now_add=True)
+    read_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.content

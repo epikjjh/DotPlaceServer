@@ -96,7 +96,7 @@ Data|Description|Type
 ---|---|---
 user name|required|string
 nick name|required|string
-phone number|required|string
+phone number|optional|string
 pass word|required|string
 email|required|string
 birthday|required|string
@@ -206,6 +206,7 @@ user id|string
 time|string
 content|string
 image ids|list
+liked|bool
 
 - status code
 
@@ -240,6 +241,7 @@ Code|Description
 ---|---
 0|success
 7|해당 position을 찾을 수 없음
+8|이미 글이 존재함
 401|unauthorized
 
 -----------------------------
@@ -866,3 +868,324 @@ Code|Description
 401|unauthorized
 
 -----------------------------
+
+35. Follow
+
+- url: follow
+- method : PUT
+- request
+
+| Data    | Description | Type   |
+| ------- | ----------- | ------ |
+| user_id | required    | string |
+
+* response : status code
+* status code
+
+| Code | Description                   |
+| ---- | ----------------------------- |
+| 0    | Success                       |
+| 31   | Invalid data : 잘못된 user_id |
+
+____________________
+
+36. Follow 취소
+
+- url: follow
+- method: Delete
+- request
+
+| Data    | Description | Type   |
+| ------- | ----------- | ------ |
+| user_id | required    | string |
+
+- response: status code
+- status code
+
+| Code | Description                  |
+| ---- | ---------------------------- |
+| 0    | Success                      |
+| 31   | Invalid data: 잘못된 user_id |
+
+-------
+
+37. User 검색 : user_id
+
+- url: user/search
+- method: GET
+- request
+
+| Data    | Description | Type   |
+| ------- | ----------- | ------ |
+| user_id | required    | string |
+
+- response: status code or json data
+
+- response
+
+| Name      | Type   |
+| --------- | ------ |
+| code      | string |
+| user name | string |
+| email     | string |
+| birthday  | string |
+| gender    | string |
+| nation    | string |
+
+- status code
+
+| Code | Description   |
+| ---- | ------------- |
+| 32   | Wrong user_id |
+| 0    | Success       |
+
+-----
+
+38. 좋아요
+
+- url: like
+- method : PUT
+- request
+
+| Data       | Description | Type   |
+| ---------- | ----------- | ------ |
+| article_id | required    | string |
+
+- response: status code or json data
+- response
+
+| Name  | Type    |
+| ----- | ------- |
+| code  | string  |
+| count | integer |
+
+- status code
+
+| Code | Description      |
+| ---- | ---------------- |
+| 33   | Wrong article_id |
+| 0    | Success          |
+
+-----
+
+39. 좋아요 취소
+
+- url: like
+- method : DELETE
+- request
+
+| Data       | Description | Type   |
+| ---------- | ----------- | ------ |
+| article_id | required    | string |
+
+- response: status code or json data
+- response
+
+| Name  | Type    |
+| ----- | ------- |
+| code  | string  |
+| count | integer |
+
+- status code
+
+| Code | Description      |
+| ---- | ---------------- |
+| 33   | Wrong article_id |
+| 0    | Success          |
+
+-----
+
+40. 팔로잉 검색
+
+- url: user/following
+- method: GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response: status code or json
+- response
+
+|Name|Type|
+|---|---|
+|ids|list|
+
+- status code
+
+|Code|Description|
+|----|----|
+| 32   | Wrong user_id |
+| 0    | Success       |
+
+-----
+
+41. 팔로워 검색
+
+- url: user/follower
+- method: GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response: status code or json
+- response
+
+|Name|Type|
+|---|---|
+|ids|list|
+
+- status code
+
+|Code|Description|
+|----|----|
+| 32   | Wrong user_id |
+| 0    | Success       |
+
+-----
+
+42. Article 검색: following
+
+- url: article/search/following
+- method: GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|offset|required|integer|
+
+- response: status code or json
+- response
+
+|Name|Type|
+|---|---|
+|code|string|
+|ids|list|
+|total|integer|
+
+- status code
+
+|Code|Description|
+|----|---|
+|35|offset이 integer가 아님|
+|36|offset이 너무 크거나 작음|
+|0|success|
+
+-----
+
+43. Profile thumbnail image 검색 : user_id
+- url: profile_image_thumbnail
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response : image(jpeg) or status code
+
+- status code
+
+Code|Description
+---|---
+29|File not found : 해당 image를 찾을 수 없음
+32|Wrong user_id
+
+-----
+
+44. Profile image 검색 : user_id
+- url: profile_image
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+
+- response : image(jpeg) or status code
+
+- status code
+
+Code|Description
+---|---
+29|File not found : 해당 image를 찾을 수 없음
+32|Wrong user_id
+
+-----
+
+45. Message 발신
+- url: message
+- method : POST
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+|content|required, < 500|string|
+
+- response : status code
+- status code
+
+Code|Description
+---|---
+32|Wrong user_id
+34|Recipient and sender are same
+35|Content is longer than limit=500
+200|success
+
+-----
+
+46. Message 수신: 안 읽은 메세지만
+
+user_id 입력시 해당 유저가 보낸 메시지만 수신
+
+- url: message
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|optional|string|
+
+- response : status code or json
+- response
+
+|Name|Type|
+|---|---|
+|messages|list|
+|message['id']|string
+|message['sender']|string
+|message['send_time']|string
+|message['content']|string
+
+- status code
+
+Code|Description
+---|---
+32|Wrong user_id
+200|success
+
+-----
+
+47. Message 읽기: 수신 후 반드시 수행
+
+- url: message
+- method : PUT
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|message_id|optional|string|
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+36|Wrong message_id
+37|Already read message
+200|success

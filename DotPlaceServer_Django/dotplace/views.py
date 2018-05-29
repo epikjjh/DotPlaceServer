@@ -2,13 +2,14 @@ import os
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment
+from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment, Message
 from dotplace.helper import create_thumbnail, index_parser
 
 
@@ -143,8 +144,10 @@ class ArticleView(APIView):
         owner_id = article.position.trip.owner.pk
         image_ids = list(ArticleImage.objects.filter(article__pk=article_id).values_list('pk', flat=True))
 
+        liked = article.like.filter(user=request.user).count() > 0
+
         return JsonResponse({'code': '0', 'user id': str(owner_id), 'time': str(time), 'content': str(content),
-                             'image ids': image_ids})
+                             'image ids': image_ids, 'liked': bool(liked)})
 
     def post(self, request):
         content = request.POST.get('content')
@@ -155,6 +158,9 @@ class ArticleView(APIView):
 
         except Position.DoesNotExist:
             return JsonResponse({'code': '7'})
+
+        if (Article.objects.filter(position=position).count() > 0):
+            return JsonResponse({'code': '8'})
 
         article = Article.objects.create(content=content, position=position)
         article.save()
@@ -217,6 +223,17 @@ def search_article_by_radius(request):
 
     return JsonResponse({'code': '0', 'article ids': result})
 
+# @api_view(['GET'])
+# @permission_classes((IsAuthenticated,))
+# def search_article_by_radius_with_offset(request):
+#     lat = float(request.GET.get('lat'))
+#     lng = float(request.GET.get('lng'))
+#     target_radius = float(request.GET.get('radius'))
+#     positions = Position.objects.exclude(type=0)
+#     result = []
+
+
+
 
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
@@ -229,6 +246,37 @@ def search_article_by_trip_id(request):
         result += list(position.article_set.all().values_list('pk', flat=True))
 
     return JsonResponse({'code': '0', 'article ids': result})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def search_articles_of_followings(request):
+    offset = request.GET.get('offset')
+    try:
+        offset = int(offset)
+    except:
+        return JsonResponse({'code': '35'})
+
+    if offset < 0: return JsonResponse({'code': '36'})
+    amount_to_get = 10
+    user = request.user
+
+    followings = list(user.following.all())
+    articles = Article.objects.filter(position__trip__owner__in=followings)
+    articles_count = articles.count()
+    offsets = articles_count / amount_to_get
+
+    begin = (offset - 1) * amount_to_get
+
+    if begin > articles_count: return JsonResponse({'code': '36'})
+
+    end = begin + amount_to_get
+    total_index = offsets + 1 if offsets > int(offsets) else offsets
+
+    if end < articles_count:
+        ret = list(articles[begin:end])
+    else: ret = list(articles[begin:])
+
+    return JsonResponse({'code': '0', 'article_ids': ret, 'total': total_index})
 
 
 @api_view(['GET'])
@@ -247,7 +295,7 @@ def news_feed(request):
     time = article.time
     trip_id = article.position.trip.pk
     content = article.content
-        
+
     if image_ids:
        result_id = image_ids[0]
     else:
@@ -334,7 +382,7 @@ class CommentView(APIView):
 @api_view(['GET'])
 @permission_classes((IsAuthenticated,))
 def search_comment_by_article_id(request):
-    article_id = request.POST.get('article id')
+    article_id = request.GET.get('article id')
 
     comment_ids = list(Comment.objects.filter(article__pk=article_id).values_list('pk', flat=True))
 
@@ -613,3 +661,235 @@ def return_article_image_thumbnail(request):
 
     else:
         return response
+
+
+class FollowView(APIView):
+    permission_classes((IsAuthenticated,))
+
+    def put(self, request):
+        following_id = request.data.get('user_id')
+        user = request.user
+
+        try:
+            following = User.objects.get(pk=following_id)
+
+        except User.DoesNotExist:
+            return JsonResponse({'code': '31'})
+
+        user.following.add(following)
+
+        return JsonResponse({'code': '0'})
+
+    def delete(self, request):
+        following_id = request.data.get('user_id')
+        user = request.user
+
+        try:
+            following = User.objects.get(pk=following_id)
+
+        except User.DoesNotExist:
+            return JsonResponse({'code': '31'})
+
+        user.following.remove(following)
+
+        return JsonResponse({'code': '0'})
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_other_user(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+
+    except User.DoesNotExist:
+        return JsonResponse({'code': '32'})
+
+    user_name = user.user_name
+    email = user.email
+    birthday = user.birthday
+    gender = user.gender
+    nation = user.nation
+
+    return JsonResponse({'code': '0', 'user name': str(user_name), 'email': str(email),'birthday': str(birthday),
+                         'gender': str(gender), 'nation': str(nation)})
+
+
+class LikeView(APIView):
+    permission_classes((IsAuthenticated,))
+
+    def put(self, request):
+        article_id = request.data.get('article_id')
+        user = request.user
+
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '33'})
+
+        article.like.add(user)
+        num_of_likes = int(User.objects.filter(article=article).count())
+        return JsonResponse({'code': '0', 'count': num_of_likes})
+
+    def delete(self, request):
+        article_id = request.data.get('article_id')
+        user = request.user
+
+        try:
+            article = Article.objects.get(pk=article_id)
+
+        except Article.DoesNotExist:
+            return JsonResponse({'code': '33'})
+
+        article.like.remove(user)
+
+        num_of_likes = int(User.objects.filter(article=article).count())
+        return JsonResponse({'code': '0', 'count': num_of_likes})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_following_by_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+
+    except User.DoesNotExist:
+        return JsonResponse({'code': '32'})
+
+    return JsonResponse({'ids': list(user.following.all())})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_follower_by_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+
+    except User.DoesNotExist:
+        return JsonResponse({'code': '32'})
+
+    return JsonResponse({'ids': list(user.following_set.all())})
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_profile_image_thumbnail_by_user_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'code':'32'})
+
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
+    file_name = 'profile_image_' + str(user.pk) + '_thumbnail.jpeg'
+
+    file_path = os.path.join(path, file_name)
+
+    try:
+        with open(file_path, 'rb') as f:
+            response = HttpResponse(f, content_type="image/jpeg")
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    except FileNotFoundError:
+        return JsonResponse({'code': '29'})
+
+    else:
+        return response
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_profile_image_by_user_id(request):
+    user_id = request.GET.get('user_id')
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'code':'32'})
+
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user')
+    file_name = 'profile_image_' + str(user.pk) + '.jpeg'
+
+    file_path = os.path.join(path, file_name)
+
+    try:
+        with open(file_path, 'rb') as f:
+            response = HttpResponse(f, content_type="image/jpeg")
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    except FileNotFoundError:
+        return JsonResponse({'code': '27'})
+
+    else:
+        return response
+
+class MessageView(APIView):
+    permission_classes((IsAuthenticated,))
+
+    def post(self, request):
+        """
+        Send message which is shorter than 500 length to recipient
+        """
+        sender = request.user
+        recipient_id = request.POST.get('user_id')
+        content = request.POST.get('content')
+
+        try:
+            recipient = User.objects.get(pk=recipient_id)
+        except User.DoesNotExist:
+            return JsonResponse({'code': '32'})
+
+        if recipient == sender:
+            return JsonResponse({'code': '34'})
+
+        # Limit the message's length
+        if len(content) > 500:
+            return JsonResponse({'code': '35'})
+
+        message = Message(sender=sender, recipient=recipient, content=content)
+        message.save()
+
+        return JsonResponse({'code': '200'})
+
+    def get(self, request):
+        """
+        Get unread messages come to user
+        """
+        user = request.user
+        sender_id = request.GET.get('user_id')
+        unread_messages = Message.objects.filter(recipient=user, read_time__isnull=True)\
+            .order_by('read_time')\
+            .values('id', 'sender', 'send_time', 'content')
+
+        if sender_id:
+            try:
+                sender = User.objects.get(pk=sender_id)
+                unread_messages.filter(sender=sender)
+            except User.DoesNotExist:
+                return JsonResponse({'code': '32'})
+
+        return JsonResponse({'code': '200', 'messages': list(unread_messages)})
+
+    def put(self, request):
+        """
+        Check that user reads the message
+        """
+        message_id = request.data.get('message_id')
+
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            return JsonResponse({'code': '36'})
+
+        if message.read_time is None:
+            message.read_time = timezone.now()
+            message.save()
+            return JsonResponse({'code': '200'})
+
+        return JsonResponse({'code': '37'})
+
+
+
