@@ -1113,3 +1113,79 @@ Code|Description
 ---|---
 29|File not found : 해당 image를 찾을 수 없음
 32|Wrong user_id
+
+-----
+
+45. Message 발신
+- url: message
+- method : POST
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|required|string|
+|content|required, < 500|string|
+
+- response : status code
+- status code
+
+Code|Description
+---|---
+32|Wrong user_id
+34|Recipient and sender are same
+35|Content is longer than limit=500
+200|success
+
+-----
+
+46. Message 수신: 안 읽은 메세지만
+
+user_id 입력시 해당 유저가 보낸 메시지만 수신
+
+- url: message
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|optional|string|
+
+- response : status code or json
+- response
+
+|Name|Type|
+|---|---|
+|messages|list|
+|message['id']|string
+|message['sender']|string
+|message['send_time']|string
+|message['content']|string
+
+- status code
+
+Code|Description
+---|---
+32|Wrong user_id
+200|success
+
+-----
+
+47. Message 읽기: 수신 후 반드시 수행
+
+- url: message
+- method : PUT
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|message_id|optional|string|
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+36|Wrong message_id
+37|Already read message
+200|success

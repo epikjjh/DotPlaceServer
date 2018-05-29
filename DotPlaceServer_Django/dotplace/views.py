@@ -2,13 +2,14 @@ import os
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment
+from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment, Message
 from dotplace.helper import create_thumbnail, index_parser
 
 
@@ -824,3 +825,71 @@ def get_profile_image_by_user_id(request):
 
     else:
         return response
+
+class MessageView(APIView):
+    permission_classes((IsAuthenticated,))
+
+    def post(self, request):
+        """
+        Send message which is shorter than 500 length to recipient
+        """
+        sender = request.user
+        recipient_id = request.POST.get('user_id')
+        content = request.POST.get('content')
+
+        try:
+            recipient = User.objects.get(pk=recipient_id)
+        except User.DoesNotExist:
+            return JsonResponse({'code': '32'})
+
+        if recipient == sender:
+            return JsonResponse({'code': '34'})
+
+        # Limit the message's length
+        if len(content) > 500:
+            return JsonResponse({'code': '35'})
+
+        message = Message(sender=sender, recipient=recipient, content=content)
+        message.save()
+
+        return JsonResponse({'code': '200'})
+
+    def get(self, request):
+        """
+        Get unread messages come to user
+        """
+        user = request.user
+        sender_id = request.GET.get('user_id')
+        unread_messages = Message.objects.filter(recipient=user, read_time__isnull=True)\
+            .order_by('read_time')\
+            .values('id', 'sender', 'send_time', 'content')
+
+        if sender_id:
+            try:
+                sender = User.objects.get(pk=sender_id)
+                unread_messages.filter(sender=sender)
+            except User.DoesNotExist:
+                return JsonResponse({'code': '32'})
+
+        return JsonResponse({'code': '200', 'messages': list(unread_messages)})
+
+    def put(self, request):
+        """
+        Check that user reads the message
+        """
+        message_id = request.data.get('message_id')
+
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            return JsonResponse({'code': '36'})
+
+        if message.read_time is None:
+            message.read_time = timezone.now()
+            message.save()
+            return JsonResponse({'code': '200'})
+
+        return JsonResponse({'code': '37'})
+
+
+

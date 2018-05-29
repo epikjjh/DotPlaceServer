@@ -167,3 +167,13 @@ class Comment(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=250)
     time = models.DateTimeField(auto_now_add=True)
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField(max_length=500)
+    send_time = models.DateTimeField(auto_now_add=True)
+    read_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.content
