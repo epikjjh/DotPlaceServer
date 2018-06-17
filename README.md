@@ -1225,3 +1225,35 @@ Code|Description
 Code|Description
 ---|---
 0|success
+
+-----
+
+50. Message Conversation 수신 by user id: 지금까지의 모든 메시지
+
+user_id 입력시 해당 유저가 보낸 메시지만 수신
+
+- url: message
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|optional|string|
+
+- response : status code or json
+- response
+
+|Name|Type|
+|---|---|
+|messages|list|
+|message['id']|string
+|message['sender']|string
+|message['send_time']|string
+|message['content']|string
+
+- status code
+
+Code|Description
+---|---
+32|Wrong user_id
+200|success

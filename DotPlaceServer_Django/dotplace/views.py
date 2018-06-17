@@ -892,6 +892,28 @@ class MessageView(APIView):
 
         return JsonResponse({'code': '37'})
 
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_conversation(self, request):
+    user = request.user
+    opponent_id = request.GET.get('user_id')
+
+    users = [user]
+
+    if opponent_id
+        try:
+            opponent = User.objects.get(pk=opponent_id)
+            users.append(opponent)
+        except User.DoesNotExist:
+            return JsonResponse({'code':'32'})
+
+
+    conversation = Message.objects.filter(sender__in=users, recipient__in=users).order_by('pk', 'sender')\
+        .values('id', 'sender', 'send_time', 'content')
+
+    return JsonResponse({'code': '200', 'messages': list(conversation)})
+
+
 
 @api_view(['POST'])
 @permission_classes((IsAuthenticated,))

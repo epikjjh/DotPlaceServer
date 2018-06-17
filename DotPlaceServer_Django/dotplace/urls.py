@@ -29,6 +29,7 @@ urlpatterns = [
     path('follow', views.FollowView.as_view()),
     path('like', views.LikeView.as_view()),
     path('message', views.MessageView.as_view()),
+    path('message/conversation', views.get_conversation),
     path('schim_start', views.schim_start),
     path('schim_end', views.schim_end),
 ]
