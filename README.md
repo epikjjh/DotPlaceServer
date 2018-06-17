@@ -1190,6 +1190,8 @@ Code|Description
 37|Already read message
 200|success
 
+-----
+
 48. 스침 시작
 
 - url: schim_start
@@ -1232,6 +1234,8 @@ Code|Description
 
 user_id 입력시 해당 유저가 보낸 메시지만 수신
 
+sender, 생성 시간 순으로 정렬
+
 - url: message
 - method : GET
 - request
@@ -1246,10 +1250,10 @@ user_id 입력시 해당 유저가 보낸 메시지만 수신
 |Name|Type|
 |---|---|
 |messages|list|
-|message['id']|string
-|message['sender']|string
-|message['send_time']|string
-|message['content']|string
+|message['id']|string|
+|message['sender']|string|
+|message['send_time']|string|
+|message['content']|string|
 
 - status code
 

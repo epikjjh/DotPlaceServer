@@ -908,7 +908,7 @@ def get_conversation(self, request):
             return JsonResponse({'code':'32'})
 
 
-    conversation = Message.objects.filter(sender__in=users, recipient__in=users).order_by('pk', 'sender')\
+    conversation = Message.objects.filter(sender__in=users, recipient__in=users).order_by('sender', 'send_time')\
         .values('id', 'sender', 'send_time', 'content')
 
     return JsonResponse({'code': '200', 'messages': list(conversation)})
