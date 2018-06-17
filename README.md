@@ -1189,3 +1189,75 @@ Code|Description
 36|Wrong message_id
 37|Already read message
 200|success
+
+-----
+
+48. 스침 시작
+
+- url: schim_start
+- method: POST
+- request
+
+|Data|Description|Type|
+|---|---|---|
+|square_id|required|string|
+|is_on_dot|required|boolean|
+|is_on_travel|required|boolean|
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+
+-----
+
+49. 스침 끝: 다음 스침 시작 전에 반드시 수행
+
+- url: schim_end
+- method: PUT
+- request: NULL
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+
+-----
+
+50. Message Conversation 수신 by user id: 지금까지의 모든 메시지
+
+user_id 입력시 해당 유저가 보낸 메시지만 수신
+
+sender, 생성 시간 순으로 정렬
+
+- url: message
+- method : GET
+- request
+
+|Data|Description|Type|
+|----|-----------|----|
+|user_id|optional|string|
+
+- response : status code or json
+- response
+
+|Name|Type|
+|---|---|
+|messages|list|
+|message['id']|string|
+|message['sender']|string|
+|message['send_time']|string|
+|message['content']|string|
+
+- status code
+
+Code|Description
+---|---
+32|Wrong user_id
+200|success

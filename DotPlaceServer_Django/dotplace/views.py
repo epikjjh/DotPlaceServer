@@ -1,4 +1,5 @@
 import os
+import datetime
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -9,7 +10,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment, Message
+from dotplace.models import User, Trip, Position, Article, ArticleImage, Comment, Message, Schim, Square
 from dotplace.helper import create_thumbnail, index_parser
 
 
@@ -891,5 +892,74 @@ class MessageView(APIView):
 
         return JsonResponse({'code': '37'})
 
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def get_conversation(self, request):
+    user = request.user
+    opponent_id = request.GET.get('user_id')
+
+    users = [user]
+
+    if opponent_id:
+        try:
+            opponent = User.objects.get(pk=opponent_id)
+            users.append(opponent)
+        except User.DoesNotExist:
+            return JsonResponse({'code':'32'})
+
+
+    conversation = Message.objects.filter(sender__in=users, recipient__in=users).order_by('sender', 'send_time')\
+        .values('id', 'sender', 'send_time', 'content')
+
+    return JsonResponse({'code': '200', 'messages': list(conversation)})
+
+
+
+@api_view(['POST'])
+@permission_classes((IsAuthenticated,))
+def schim_start(self, request):
+    user = request.user
+    square_id = request.POST.get('square_id')
+    is_on_dot = request.POST.get('is_on_dot')
+    is_on_travel = request.POST.get('is_on_travel')
+
+    Square.objects.update_or_create(user=user, defaults={'square_id': int(square_id), 'on_dot': is_on_dot,
+                                                         'on_travel': is_on_travel})
+
+    return JsonResponse({'code': "0"})
+
+
+@api_view(['PUT'])
+@permission_classes((IsAuthenticated,))
+def schim_end(self, request):
+    user = request.user
+
+    square_of_user = Square.objects.get(user=user)
+    is_user_on_dot = square_of_user.on_dot
+    is_user_on_travel = square_of_user.on_travel
+
+    square_id = square_of_user.square_id
+    user_time = square_of_user.entry_time
+    users_in_the_square = Square.objects.filter(square_id=square_id).exclude(user=user)
+
+    for other in users_in_the_square:
+        other_time = other.entry_time.timestamp().__int__()
+
+        if user.id > other.id:
+            user1 = other.user
+            user2 = user
+        else:
+            user1 = user
+            user2 = other.user
+
+        schim = Schim.objects.get_or_create(user1=user1, user2=user2)
+
+        DOT = (2 if is_user_on_dot else 1) * (2 if other.on_dot else 1)
+        TRAVEL = (2 if is_user_on_travel else 1) * (2 if other.on_travel else 1)
+
+        schim.score += TRAVEL * DOT * int(datetime.datetime.now().timestamp() - max(user_time, other_time)) / 60
+        schim.save()
+
+    return JsonResponse({'code': "0"})
 
 
