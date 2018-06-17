@@ -1189,3 +1189,39 @@ Code|Description
 36|Wrong message_id
 37|Already read message
 200|success
+
+48. 스침 시작
+
+- url: schim_start
+- method: POST
+- request
+
+|Data|Description|Type|
+|---|---|---|
+|square_id|required|string|
+|is_on_dot|required|boolean|
+|is_on_travel|required|boolean|
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success
+
+-----
+
+49. 스침 끝: 다음 스침 시작 전에 반드시 수행
+
+- url: schim_end
+- method: PUT
+- request: NULL
+
+- response : status code
+
+- status code
+
+Code|Description
+---|---
+0|success

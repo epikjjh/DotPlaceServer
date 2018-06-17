@@ -177,3 +177,15 @@ class Message(models.Model):
 
     def __str__(self):
         return self.content
+
+class Schim(models.Model):
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE)
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE)
+    score = models.PositiveIntegerField(default=0)
+
+class Square(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    square_id = models.PositiveIntegerField()
+    entry_time = models.DateTimeField(auto_now=True)
+    on_dot = models.BooleanField(default=False)
+    on_travel = models.BooleanField(default=False)
