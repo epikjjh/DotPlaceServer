@@ -900,7 +900,7 @@ def get_conversation(self, request):
 
     users = [user]
 
-    if opponent_id
+    if opponent_id:
         try:
             opponent = User.objects.get(pk=opponent_id)
             users.append(opponent)
